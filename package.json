@@ -1,0 +1,54 @@
+{
+  "name": "thoth-plugin",
+  "version": "1.1.0",
+  "description": "Thoth - Root-level life orchestrator for OpenCode. Unified AI chief of staff combining Sisyphus execution quality, Personal-OS rhythms, and Thoth relationship model.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "bin": {
+    "thoth": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema.json": "./dist/thoth-plugin.schema.json"
+  },
+  "scripts": {
+    "build": "bun build src/index.ts src/cli.ts --outdir dist --target bun --format esm && cp -r defaults dist/ && (tsc --emitDeclarationOnly || true) && bun run build:schema",
+    "build:schema": "bun run script/build-schema.ts",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "bun run clean && bun run build",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "thoth",
+    "life-orchestrator",
+    "chief-of-staff",
+    "ai",
+    "llm",
+    "personal-os"
+  ],
+  "author": "David Helmus",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davidhelmus/thoth-core.git"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.0.162",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.3",
+    "zod-to-json-schema": "^3.25.1"
+  }
+}
