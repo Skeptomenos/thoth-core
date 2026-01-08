@@ -5,7 +5,9 @@
  * Uses additive depth inheritance: each level adds to the previous.
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
 import type { Specialization, Domain } from "./types";
 import {
   THOTH_CORE_IDENTITY,
@@ -14,6 +16,128 @@ import {
   THOTH_KNOWLEDGE_MANAGEMENT,
 } from "./prompt-sections";
 import { resolveBootPaths } from "./boot-sequences";
+
+// =============================================================================
+// SKILL TRIGGER DISCOVERY
+// =============================================================================
+
+interface SkillTriggerInfo {
+  name: string;
+  triggers: string[];
+}
+
+/**
+ * Parse YAML frontmatter from skill file to extract triggers
+ */
+function parseSkillTriggers(content: string): { name: string; triggers: string[] } | null {
+  const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---/;
+  const match = content.match(frontmatterRegex);
+  
+  if (!match) return null;
+  
+  const yaml = match[1];
+  let name = "";
+  const triggers: string[] = [];
+  let inTriggers = false;
+  
+  for (const line of yaml.split("\n")) {
+    const trimmed = line.trim();
+    
+    if (trimmed.startsWith("name:")) {
+      name = trimmed.slice(5).trim();
+      inTriggers = false;
+    } else if (trimmed === "triggers:") {
+      inTriggers = true;
+    } else if (inTriggers && trimmed.startsWith("- ")) {
+      triggers.push(trimmed.slice(2).trim());
+    } else if (trimmed.includes(":") && !trimmed.startsWith("-")) {
+      inTriggers = false;
+    }
+  }
+  
+  return triggers.length > 0 ? { name, triggers } : null;
+}
+
+/**
+ * Discover skill triggers from a directory
+ */
+function discoverTriggersFromDir(skillsDir: string): SkillTriggerInfo[] {
+  if (!existsSync(skillsDir)) return [];
+  
+  const results: SkillTriggerInfo[] = [];
+  
+  try {
+    const entries = readdirSync(skillsDir, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      if (entry.name.startsWith(".")) continue;
+      if (!entry.isDirectory()) continue;
+      
+      const skillMdPath = join(skillsDir, entry.name, "SKILL.md");
+      if (!existsSync(skillMdPath)) continue;
+      
+      try {
+        const content = readFileSync(skillMdPath, "utf-8");
+        const parsed = parseSkillTriggers(content);
+        if (parsed) {
+          results.push(parsed);
+        }
+      } catch {
+        // Skip unreadable files
+      }
+    }
+  } catch {
+    // Skip unreadable directories
+  }
+  
+  return results;
+}
+
+/**
+ * Build skill routing section for system prompt
+ */
+function buildSkillRoutingSection(): string {
+  const projectSkillsDir = join(process.cwd(), ".opencode", "skill");
+  const userSkillsDir = join(homedir(), ".opencode", "skill");
+  
+  // Discover triggers from both locations (project overrides user)
+  const projectTriggers = discoverTriggersFromDir(projectSkillsDir);
+  const userTriggers = discoverTriggersFromDir(userSkillsDir);
+  
+  // Merge, project wins for duplicates
+  const seen = new Set<string>();
+  const allTriggers: SkillTriggerInfo[] = [];
+  
+  for (const t of [...projectTriggers, ...userTriggers]) {
+    if (!seen.has(t.name)) {
+      seen.add(t.name);
+      allTriggers.push(t);
+    }
+  }
+  
+  if (allTriggers.length === 0) {
+    return "";
+  }
+  
+  const lines = [
+    "<Skill_Routing>",
+    "## Skill Routing (CHECK BEFORE RESPONDING)",
+    "",
+    "Before responding to user requests, check if their intent matches a skill trigger:",
+    "",
+  ];
+  
+  for (const skill of allTriggers) {
+    const triggers = skill.triggers.map((t) => `"${t}"`).join(", ");
+    lines.push(`- ${triggers} → \`skill({ skill: "${skill.name}" })\``);
+  }
+  
+  lines.push("");
+  lines.push("**Rule**: If user intent matches a trigger, invoke the skill immediately. Don't improvise workflows that already exist.");
+  lines.push("</Skill_Routing>");
+  
+  return lines.join("\n");
+}
 
 // =============================================================================
 // CORE PROTOCOLS (Always Present)
@@ -191,6 +315,12 @@ export function buildThothPrompt(spec: Specialization): string {
   // Hemisphere voices, category expertise, and deep expertise REMOVED
   // Specialization now handled via AGENTS.md files loaded at boot time
   // See backlog: "Rethink jacket/specialization system"
+
+  // Skill routing: Dynamic trigger injection from skill frontmatter
+  const skillRouting = buildSkillRoutingSection();
+  if (skillRouting) {
+    sections.push(skillRouting);
+  }
 
   // Always: Core capabilities
   sections.push(THOTH_CORE_CAPABILITIES);

@@ -104,6 +104,7 @@ function parseSkillFrontmatter(data: Record<string, unknown>): SkillFrontmatter 
     description: typeof data.description === "string" ? data.description : "",
     license: typeof data.license === "string" ? data.license : undefined,
     "allowed-tools": Array.isArray(data["allowed-tools"]) ? data["allowed-tools"] : undefined,
+    triggers: Array.isArray(data.triggers) ? data.triggers : undefined,
     metadata:
       typeof data.metadata === "object" && data.metadata !== null
         ? (data.metadata as Record<string, string>)
@@ -111,16 +112,23 @@ function parseSkillFrontmatter(data: Record<string, unknown>): SkillFrontmatter 
   };
 }
 
+interface DiscoveredSkill {
+  name: string;
+  description: string;
+  scope: SkillScope;
+  triggers?: string[];
+}
+
 function discoverSkillsFromDir(
   skillsDir: string,
   scope: SkillScope
-): Array<{ name: string; description: string; scope: SkillScope }> {
+): DiscoveredSkill[] {
   if (!existsSync(skillsDir)) {
     return [];
   }
 
   const entries = readdirSync(skillsDir, { withFileTypes: true });
-  const skills: Array<{ name: string; description: string; scope: SkillScope }> = [];
+  const skills: DiscoveredSkill[] = [];
 
   for (const entry of entries) {
     if (entry.name.startsWith(".")) continue;
@@ -141,6 +149,7 @@ function discoverSkillsFromDir(
           name: (data.name as string) || entry.name,
           description: (data.description as string) || "",
           scope,
+          triggers: Array.isArray(data.triggers) ? (data.triggers as string[]) : undefined,
         });
       } catch {
         continue;
@@ -151,7 +160,7 @@ function discoverSkillsFromDir(
   return skills;
 }
 
-function discoverSkillsSync(): Array<{ name: string; description: string; scope: SkillScope }> {
+function discoverSkillsSync(): DiscoveredSkill[] {
   const userSkillsDir = join(homedir(), ".opencode", "skill");
   const projectSkillsDir = join(process.cwd(), ".opencode", "skill");
 
@@ -162,6 +171,30 @@ function discoverSkillsSync(): Array<{ name: string; description: string; scope:
 
   // Project > User > Builtin (first occurrence wins via deduplication)
   return deduplicateSkills([...projectSkills, ...userSkills, ...builtinSkills]);
+}
+
+/**
+ * Build trigger map for tool description
+ */
+function buildTriggerSection(skills: DiscoveredSkill[]): string {
+  const skillsWithTriggers = skills.filter((s) => s.triggers && s.triggers.length > 0);
+  
+  if (skillsWithTriggers.length === 0) {
+    return "";
+  }
+
+  const lines = [
+    "\n\nSkill Triggers (invoke skill when user says these phrases):",
+  ];
+
+  for (const skill of skillsWithTriggers) {
+    const triggers = skill.triggers!.map((t) => `"${t}"`).join(", ");
+    lines.push(`- ${triggers} → ${skill.name}`);
+  }
+
+  lines.push("\nIMPORTANT: If user intent matches a trigger phrase, invoke the skill immediately. Don't improvise.");
+
+  return lines.join("\n");
 }
 
 async function parseSkillMd(skillPath: string): Promise<SkillInfo | null> {
@@ -183,6 +216,7 @@ async function parseSkillMd(skillPath: string): Promise<SkillInfo | null> {
       description: frontmatter.description,
       license: frontmatter.license,
       allowedTools: frontmatter["allowed-tools"],
+      triggers: frontmatter.triggers,
       metadata: frontmatter.metadata,
     };
 
@@ -353,6 +387,7 @@ export function createSkillTool(): ReturnType<typeof tool> {
   const skillListForDescription = availableSkills
     .map((s) => `- ${s.name}: ${s.description} (${s.scope})`)
     .join("\n");
+  const triggerSection = buildTriggerSection(availableSkills);
 
   return tool({
     description: `Execute a skill within the main conversation.
@@ -360,7 +395,7 @@ export function createSkillTool(): ReturnType<typeof tool> {
 When you invoke a skill, the skill's prompt will expand and provide detailed instructions on how to complete the task.
 
 Available Skills:
-${skillListForDescription || "(No skills discovered yet)"}`,
+${skillListForDescription || "(No skills discovered yet)"}${triggerSection}`,
 
     args: {
       skill: tool.schema

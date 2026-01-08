@@ -10,6 +10,7 @@ export const SkillFrontmatterSchema = z.object({
   description: z.string().min(20, "Description must be at least 20 characters for discoverability"),
   license: z.string().optional(),
   "allowed-tools": z.array(z.string()).optional(),
+  triggers: z.array(z.string()).optional(),
   metadata: z.record(z.string(), z.string()).optional(),
 });
 
@@ -20,6 +21,7 @@ export interface SkillMetadata {
   description: string;
   license?: string;
   allowedTools?: string[];
+  triggers?: string[];
   metadata?: Record<string, string>;
 }
 
