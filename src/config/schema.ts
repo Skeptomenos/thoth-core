@@ -16,6 +16,8 @@ const HooksConfigSchema = z.object({
   "knowledge-persistence": z.boolean().optional(),
   "directory-agents-injector": z.boolean().optional(),
   "frontmatter-enforcer": z.boolean().optional(),
+  "read-confirmation": z.boolean().optional(),
+  "write-confirmation": z.boolean().optional(),
   // Shared hooks (from oh-my-opencode)
   "todo-continuation": z.boolean().optional(),
   "session-recovery": z.boolean().optional(),

@@ -29,3 +29,15 @@ export {
   type FrontmatterEnforcerHook,
   type FrontmatterEnforcerConfig,
 } from "./frontmatter-enforcer";
+
+export {
+  createReadConfirmationHook,
+  type ReadConfirmationHook,
+  type ReadConfirmationConfig,
+} from "./read-confirmation";
+
+export {
+  createWriteConfirmationHook,
+  type WriteConfirmationHook,
+  type WriteConfirmationConfig,
+} from "./write-confirmation";

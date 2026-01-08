@@ -7,6 +7,8 @@ import {
   createContextApertureHook,
   createTemporalAwarenessHook,
   createFrontmatterEnforcerHook,
+  createReadConfirmationHook,
+  createWriteConfirmationHook,
 } from "./hooks";
 import { createDirectoryAgentsInjectorHook } from "./hooks/directory-agents-injector";
 import {
@@ -165,6 +167,15 @@ const ThothPlugin: Plugin = async (ctx) => {
     ? createFrontmatterEnforcerHook({ knowledgeBasePath })
     : null;
 
+  // Read/Write confirmation hooks - audit trail and Smart Merge reminders
+  const readConfirmation = hooksConfig["read-confirmation"] !== false
+    ? createReadConfirmationHook({ knowledgeBasePath })
+    : null;
+
+  const writeConfirmation = hooksConfig["write-confirmation"] !== false
+    ? createWriteConfirmationHook({ knowledgeBasePath })
+    : null;
+
   const todoContinuationEnforcer = hooksConfig["todo-continuation"] !== false
     ? createTodoContinuationEnforcer(ctx)
     : null;
@@ -310,12 +321,16 @@ const ThothPlugin: Plugin = async (ctx) => {
       await contextAperture?.["tool.execute.before"]?.(input, output);
       await trustLevelTracker?.["tool.execute.before"]?.(input, output);
       await frontmatterEnforcer?.["tool.execute.before"]?.(input, output);
+      await readConfirmation?.["tool.execute.before"]?.(input, output);
+      await writeConfirmation?.["tool.execute.before"]?.(input, output);
     },
 
     "tool.execute.after": async (input, output) => {
       await trustLevelTracker?.["tool.execute.after"]?.(input, output);
       await contextAperture?.["tool.execute.after"]?.(input, output);
       await frontmatterEnforcer?.["tool.execute.after"]?.(input, output);
+      await readConfirmation?.["tool.execute.after"]?.(input, output);
+      await writeConfirmation?.["tool.execute.after"]?.(input, output);
       await directoryAgentsInjector?.["tool.execute.after"]?.(
         input as { tool: string; sessionID: string; callID: string },
         output as { title: string; output: string; metadata: unknown }
