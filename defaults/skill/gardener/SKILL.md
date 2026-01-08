@@ -1,6 +1,12 @@
 ---
 name: gardener
 description: Use when knowledge base health needs checking, broken links need fixing, orphan files need registering, or cross-references between related files are missing
+triggers:
+  - "Check knowledge base"
+  - "Run gardener"
+  - "KB health"
+  - "Fix broken links"
+  - "Check for orphan files"
 ---
 
 # Gardener Skill
@@ -58,12 +64,92 @@ The canonical frontmatter schema is defined in `kernel/config/frontmatter-schema
 
 ---
 
+## Severity Levels
+
+All issues are classified by severity to prioritize repair work:
+
+| Severity | Symbol | Meaning | Action |
+|----------|--------|---------|--------|
+| **CRITICAL** | `[C]` | Data integrity at risk, navigation broken | Fix immediately |
+| **ERROR** | `[E]` | Functionality impaired, links broken | Fix soon |
+| **WARNING** | `[W]` | Best practices violated, maintenance debt | Fix when convenient |
+| **INFO** | `[I]` | Suggestions for improvement | Optional |
+
+### Severity by Issue Type
+
+| Issue | Default Severity | Escalation Condition |
+|-------|------------------|----------------------|
+| Missing required frontmatter field | ERROR | CRITICAL if `type` missing |
+| Invalid frontmatter value | WARNING | ERROR if `status` or `priority` |
+| Broken internal link | ERROR | CRITICAL if in registry/index |
+| Missing bidirectional link | WARNING | — |
+| Orphan file (not indexed) | WARNING | ERROR if in people/ or projects/ |
+| Registry ghost (indexed but missing) | CRITICAL | — |
+| Stale _index.md (files not listed) | WARNING | ERROR if >5 files missing |
+| Frontmatter schema violation | ERROR | — |
+
+---
+
 ## Mode 1: Health Check
 
-### Step 1: Run Scan
+### Step 1: Scan All Categories
 
-```bash
-npx tsx scripts/gardener-scan.ts --verbose
+Perform these checks systematically:
+
+#### 1.1 Frontmatter Validation
+
+For each `.md` file in the knowledge base:
+
+```
+CHECK: Has frontmatter block (--- ... ---)
+CHECK: Has required fields: type, hemisphere, created, updated
+CHECK: type value is valid (person, project, task, note, reference, etc.)
+CHECK: hemisphere value matches path (work/, life/, coding/, kernel/)
+CHECK: Type-specific required fields present:
+  - person: relationship
+  - project: status
+  - task: status, priority
+CHECK: Values are valid per schema:
+  - status (project): planning|active|on-hold|completed|cancelled
+  - status (task): pending|in-progress|done|cancelled|blocked
+  - priority: P0|P1|P2|P3
+  - health: green|yellow|red
+  - relationship: manager|peer|report|stakeholder|friend|family
+```
+
+#### 1.2 Link Integrity
+
+For each `[[wikilink]]` and `[markdown](link)`:
+
+```
+CHECK: Target file exists
+CHECK: Target path is correct (not moved/renamed)
+CHECK: Bidirectional: if A links to B, does B link to A?
+```
+
+#### 1.3 Index Coverage
+
+For each `_index.md` file:
+
+```
+CHECK: All files in same directory are listed
+CHECK: All listed files actually exist (no ghosts)
+CHECK: File summaries are present and accurate
+```
+
+For `registry.md`:
+
+```
+CHECK: All hemispheres represented
+CHECK: Key entity counts are accurate
+CHECK: Last updated date is recent
+```
+
+#### 1.4 Orphan Detection
+
+```
+CHECK: Every .md file (except _index.md, registry.md) is listed in its _index.md
+CHECK: Every entity file has at least one incoming link
 ```
 
 ### Step 2: Synthesize Report
@@ -73,21 +159,34 @@ npx tsx scripts/gardener-scan.ts --verbose
 
 **Scanned**: {timestamp}
 **Total Files**: {count}
-**Overall Health**: {healthy|needs-attention|critical}
+**Overall Health**: {HEALTHY|NEEDS-ATTENTION|CRITICAL}
 
-### Summary
-| Category | Count | Severity |
-|----------|-------|----------|
-| Frontmatter Issues | X | warning |
-| Broken Links | X | error |
-| Orphan Files | X | warning |
-| Registry Ghosts | X | error |
+### Summary by Severity
+| Severity | Count | Categories |
+|----------|-------|------------|
+| CRITICAL | X | {list} |
+| ERROR | X | {list} |
+| WARNING | X | {list} |
+| INFO | X | {list} |
 
-### Critical Issues (Top 10)
-{List with file path and issue}
+### Issue Breakdown
+| Category | [C] | [E] | [W] | [I] |
+|----------|-----|-----|-----|-----|
+| Frontmatter Issues | X | X | X | X |
+| Broken Links | X | X | X | X |
+| Missing Bidirectional | — | — | X | X |
+| Orphan Files | — | X | X | — |
+| Index Staleness | — | X | X | — |
+| Registry Ghosts | X | — | — | — |
+
+### Critical Issues (Must Fix)
+{List all CRITICAL items with file path and specific issue}
+
+### Errors (Should Fix)
+{List top 10 ERROR items}
 
 ### Recommendations
-{3-5 prioritized actions}
+{3-5 prioritized actions based on findings}
 ```
 
 ---
@@ -228,6 +327,87 @@ For each approved link:
 
 ---
 
+## Bidirectional Link Verification
+
+A healthy knowledge base has bidirectional links: if A references B, B should reference A.
+
+### Detection Algorithm
+
+```
+For each file A:
+  For each outgoing link to file B:
+    Check if B has any link back to A
+    If not: flag as "Missing bidirectional: B should link to A"
+```
+
+### Severity Classification
+
+| Situation | Severity |
+|-----------|----------|
+| Person A mentions Person B, B doesn't mention A | WARNING |
+| Project links to stakeholder, stakeholder doesn't link to project | WARNING |
+| Registry/index links to file, file doesn't link back | INFO (one-way is OK) |
+| Two files in `related:` frontmatter but no body links | WARNING |
+
+### Repair Suggestion Format
+
+```markdown
+### Missing Bidirectional Links
+
+| Source | Target | Evidence | Suggested Fix |
+|--------|--------|----------|---------------|
+| work/people/alice.md | work/people/bob.md | Alice mentions Bob (line 23) | Add `[[alice]]` to bob.md Related section |
+```
+
+---
+
+## Index Staleness Detection
+
+Every directory with content files should have an `_index.md` that lists all files.
+
+### Detection Algorithm
+
+```
+For each directory with _index.md:
+  List all .md files in directory (excluding _index.md)
+  Parse _index.md for file references
+  
+  STALE if:
+    - File exists but not in _index.md (orphan)
+    - File in _index.md but doesn't exist (ghost)
+    - File count mismatch > 0
+```
+
+### Severity Classification
+
+| Situation | Severity |
+|-----------|----------|
+| 1-2 files missing from _index.md | WARNING |
+| 3-5 files missing from _index.md | WARNING |
+| >5 files missing from _index.md | ERROR |
+| Ghost entry (listed but doesn't exist) | ERROR |
+| _index.md missing entirely in content directory | ERROR |
+
+### Report Format
+
+```markdown
+### Index Staleness Report
+
+| Directory | Files | Indexed | Missing | Ghosts | Severity |
+|-----------|-------|---------|---------|--------|----------|
+| work/people/ | 15 | 12 | 3 | 0 | [W] |
+| work/projects/ | 8 | 8 | 0 | 1 | [E] |
+
+#### Missing from Index
+- work/people/new-person.md (created 2026-01-09)
+- work/people/another.md (created 2026-01-08)
+
+#### Ghost Entries (file doesn't exist)
+- work/projects/deleted-project.md (remove from _index.md)
+```
+
+---
+
 ## Red Flags - STOP
 
 - About to add 50+ links without review
@@ -280,4 +460,50 @@ Before completing cross-reference mode:
 
 ---
 
-*Gardener v3.0 | Part of Thoth Knowledge Management System*
+## Frontmatter Validation Details
+
+### Required Fields by Type
+
+| File Type | Required Fields | Optional Fields |
+|-----------|-----------------|-----------------|
+| **All files** | `type`, `hemisphere`, `created`, `updated` | `tags`, `summary`, `related` |
+| **person** | + `relationship` | `email`, `slack`, `role`, `company` |
+| **project** | + `status` | `priority`, `health`, `due`, `stakeholders` |
+| **task** | + `status`, `priority` | `due`, `project`, `assignee` |
+
+### Validation Error Examples
+
+```markdown
+### Frontmatter Validation Errors
+
+| File | Issue | Severity | Fix |
+|------|-------|----------|-----|
+| work/people/alice.md | Missing `relationship` field | [E] | Add `relationship: peer` |
+| work/projects/foo.md | Invalid status: "wip" | [E] | Change to `status: active` |
+| life/notes/random.md | Missing `type` field | [C] | Add `type: note` |
+| work/people/bob.md | hemisphere: "work" but path is life/ | [W] | Update to `hemisphere: life` |
+```
+
+### Auto-Fixable Issues
+
+The following can be auto-fixed with `/gardener fix`:
+
+| Issue | Auto-Fix Action |
+|-------|-----------------|
+| Missing `created` | Set to file creation date |
+| Missing `updated` | Set to file modification date |
+| Missing `hemisphere` | Infer from file path |
+| Incorrect `hemisphere` | Correct to match path |
+
+### Manual-Fix Required
+
+| Issue | Why Manual |
+|-------|------------|
+| Missing `type` | Cannot infer content type |
+| Missing `relationship` | Cannot guess relationship |
+| Missing `status` | Cannot guess project/task state |
+| Invalid enum value | Need user to choose correct value |
+
+---
+
+*Gardener v4.0 | Part of Thoth Knowledge Management System*
