@@ -1,6 +1,12 @@
 ---
 name: slack-pulse
 description: Scan Slack for mentions, high-value DMs, and informal requests using the Thoth standard protocol.
+triggers:
+  - check slack
+  - slack mentions
+  - what's happening on slack
+  - any slack messages
+  - scan slack
 ---
 
 # Slack Pulse Skill

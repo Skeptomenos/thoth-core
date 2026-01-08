@@ -1,6 +1,13 @@
 ---
 name: leadership-coach
 description: IC-to-Manager coaching for new leaders. Use for leadership challenges, team operations, stakeholder management, 1:1 prep, performance conversations, or when feeling overwhelmed as a new manager.
+triggers:
+  - help me with leadership
+  - manager coaching
+  - prep for 1:1
+  - performance conversation
+  - feeling overwhelmed as manager
+  - team challenge
 ---
 
 ## Role

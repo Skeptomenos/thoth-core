@@ -7,7 +7,7 @@ description: Use when creating a new skill, editing an existing skill, or when a
 
 You are creating or editing a skill for the Thoth knowledge system.
 
-**Core principle:** No skill without baseline understanding first. Writing skills IS Test-Driven Development applied to process documentation.
+**Core principle:** No skill without baseline failure first. Writing skills IS Test-Driven Development applied to process documentation.
 
 **Violating the letter of this process is violating the spirit of this process.**
 
@@ -16,20 +16,21 @@ You are creating or editing a skill for the Thoth knowledge system.
 ## The Iron Law
 
 ```
-NO SKILL FILE CREATED UNTIL PHASE 1 IS COMPLETE
+NO SKILL FILE CREATED UNTIL RED PHASE SUBAGENT COMPLETES
 ```
 
-If you create a SKILL.md before completing Phase 1, delete it. Start over.
+If you create a SKILL.md before the RED phase subagent documents a failure, delete it. Start over.
 
 **No exceptions:**
 - Don't keep it as "draft"
-- Don't "refine it later"
+- Don't "refine it later"  
 - Don't skip because "it's simple"
+- Don't skip because "it's just a technique skill"
 - Delete means delete
 
 ---
 
-## Phase 1: Research (Before Writing Anything)
+## Phase 0: Setup
 
 ### Step 1: Check if Skill Exists
 
@@ -41,39 +42,72 @@ If exists: Read it first. You're editing, not creating.
 
 ### Step 2: Classify Skill Type
 
-| Type | Purpose | Testing Approach |
-|------|---------|------------------|
-| **Discipline** | Rules that resist rationalization (TDD, verification) | Subagent pressure test |
-| **Workflow** | Multi-step process with checkpoints | Manual walkthrough |
-| **Technique** | Concrete method with steps | Clarity check |
-| **Reference** | API docs, syntax guides | Retrieval test |
+| Type | Purpose |
+|------|---------|
+| **Discipline** | Rules that resist rationalization (TDD, verification) |
+| **Workflow** | Multi-step process with checkpoints |
+| **Technique** | Concrete method with steps |
+| **Reference** | API docs, syntax guides |
 
 **Write down the type before proceeding.**
 
 ### Step 3: Research the Domain
 
-For technique/reference skills:
 - What tools/APIs are involved?
 - What are common mistakes?
 - What does success look like?
 
-For discipline skills:
-- What behavior are we enforcing?
+For discipline skills, also identify:
 - What rationalizations will agents use to skip it?
 - What pressure scenarios test compliance?
 
-### Step 4: Baseline Test (Discipline Skills Only)
+---
 
-Run a scenario WITHOUT the skill. Document:
-- What did the agent do?
-- What rationalizations were used?
-- What was skipped?
+## Phase 1: RED — Baseline Test (MANDATORY)
 
-See [testing-protocol.md](testing-protocol.md) for detailed testing procedures by skill type.
+**You MUST dispatch a subagent to attempt the task WITHOUT the skill.**
+
+### Dispatch Baseline Subagent
+
+```
+task(
+  subagent_type="general",
+  description="Baseline test for {skill-name}",
+  prompt="""
+You are testing baseline behavior WITHOUT a skill.
+
+**Task:** {Describe the task the skill will teach}
+
+**Context:** {Relevant context}
+
+**Instructions:** Complete the task using your best judgment. 
+Do NOT load any skills. Just complete the task as you normally would.
+
+**Report back:**
+1. What approach did you take?
+2. What formatting/tools/methods did you use?
+3. Show the exact output you produced.
+4. What assumptions did you make?
+"""
+)
+```
+
+### Document the Failure
+
+Before proceeding, write down:
+- **What the agent did wrong** (or suboptimally)
+- **What rationalizations were used** (verbatim if possible)
+- **What the skill must teach** to prevent this
+
+**GATE: Do not proceed to Phase 2 until you have documented at least one failure or suboptimal behavior.**
+
+If the baseline agent does everything perfectly, you may not need this skill.
 
 ---
 
-## Phase 2: Write Minimal Skill
+## Phase 2: GREEN — Write Minimal Skill
+
+Address the specific failures documented in Phase 1.
 
 ### Frontmatter (Required)
 
@@ -155,9 +189,60 @@ Copy this template and fill in:
 
 ---
 
-## Phase 3: Quality Gate
+## Phase 3: GREEN — Verify With Skill (MANDATORY)
 
-Before claiming the skill is complete, verify:
+**You MUST dispatch a subagent to attempt the same task WITH the skill.**
+
+### Dispatch Skill-Guided Subagent
+
+```
+task(
+  subagent_type="general",
+  description="Skill-guided test for {skill-name}",
+  prompt="""
+You are testing a skill.
+
+**REQUIRED SKILL — Read and follow this exactly:**
+
+---
+{Paste the full skill content here}
+---
+
+**Task:** {Same task as baseline}
+
+**Context:** {Same context as baseline}
+
+**Instructions:** Follow the skill above. Complete the task.
+
+**Report back:**
+1. What approach did you take?
+2. Did you follow the skill completely?
+3. Show the exact output you produced.
+"""
+)
+```
+
+### Verify the Fix
+
+Compare baseline vs skill-guided:
+- Did the agent avoid the mistakes from Phase 1?
+- Any NEW rationalizations that bypassed the skill?
+- Any ambiguities in the skill that allowed violations?
+
+**GATE: Do not proceed until the skill-guided agent performs correctly.**
+
+If the agent still fails, revise the skill and re-test.
+
+---
+
+## Phase 4: REFACTOR — Quality Gate
+
+### Close Loopholes
+
+For each new rationalization found in Phase 3:
+1. Add explicit counter to Common Mistakes or Rationalization Table
+2. Add to Red Flags section
+3. Re-run Phase 3 if significant changes made
 
 ### Format Checks
 
@@ -183,7 +268,8 @@ wc -l .opencode/skill/{name}/SKILL.md
 
 ### Functional Check
 
-- [ ] Walked through the skill as if following it
+- [ ] Baseline subagent documented failure (Phase 1)
+- [ ] Skill-guided subagent performed correctly (Phase 3)
 - [ ] All referenced tools/commands exist
 - [ ] No ambiguous instructions
 
@@ -198,20 +284,25 @@ wc -l .opencode/skill/{name}/SKILL.md
 | "The example is self-explanatory" | Examples don't replace Quick Reference tables. |
 | "It's just a reference skill" | Reference skills still need When to Use and Common Mistakes. |
 | "I already know this domain" | Your knowledge isn't in the file. Document it. |
-| "Baseline test is overkill" | Baseline reveals what you'll skip. Do it. |
+| "Baseline test is overkill" | Baseline reveals what you'll skip. Do it. Subagent is mandatory. |
+| "It's just a technique skill, doesn't need baseline" | Technique skills fail too. We learned this with email-draft. Test everything. |
+| "I already know what will fail" | You're guessing. Run the subagent. Document actual behavior. |
+| "I'll test after writing" | That's not TDD. RED comes before GREEN. Delete and start over. |
 | "Description can summarize the workflow" | Claude follows descriptions instead of reading skills. Never summarize. |
 
 ---
 
 ## Red Flags - STOP
 
-- Creating SKILL.md before completing Phase 1
+- Creating SKILL.md before RED phase subagent completes
+- Skipping baseline test for ANY skill type
+- "I already know what will fail" without running subagent
 - Description summarizes workflow ("scans X, extracts Y, outputs Z")
 - Missing "When to Use" section
 - No Quick Reference table
-- Skipping baseline test for discipline skills
 - "I'll test it later"
 - Skill over 500 lines without supporting files
+- Proceeding to Phase 4 without Phase 3 subagent verification
 
 **All of these mean: STOP. Go back to the phase you skipped.**
 
@@ -237,4 +328,16 @@ This skill is a lightweight enforcement layer. The guide has the full theory and
 
 ---
 
-*Skill Generator v1.0 | Part of Thoth Knowledge Management System*
+*Skill Generator v2.0 | Part of Thoth Knowledge Management System*
+
+---
+
+## Quick Reference: The Phases
+
+| Phase | Name | Action | Gate |
+|-------|------|--------|------|
+| 0 | Setup | Check exists, classify type, research domain | — |
+| 1 | RED | Dispatch subagent WITHOUT skill, document failure | Must have documented failure |
+| 2 | GREEN | Write minimal skill addressing failures | — |
+| 3 | GREEN | Dispatch subagent WITH skill, verify fix | Must pass |
+| 4 | REFACTOR | Close loopholes, quality checks | All checks pass |

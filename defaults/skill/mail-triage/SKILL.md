@@ -1,6 +1,13 @@
 ---
 name: mail-triage
 description: Exhaustive Gmail inbox triage using the Thoth standard protocol. Drains ALL inbox items and returns an executive dashboard.
+triggers:
+  - check my email
+  - email triage
+  - process inbox
+  - what's in my inbox
+  - scan my email
+  - any important emails
 ---
 
 # Mail Triage Skill

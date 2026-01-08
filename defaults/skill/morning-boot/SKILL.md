@@ -1,6 +1,14 @@
 ---
 name: morning-boot
 description: The master orchestrator for your morning routine. Parallelizes scans and synthesizes the Daily Log.
+triggers:
+  - start my day
+  - morning routine
+  - prepare me for the day
+  - what do I need to do today
+  - boot up
+  - daily briefing
+  - morning boot
 ---
 
 # Morning Boot Skill

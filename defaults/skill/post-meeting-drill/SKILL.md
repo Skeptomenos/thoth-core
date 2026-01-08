@@ -1,6 +1,12 @@
 ---
 name: post-meeting-drill
 description: Deep processing of meeting notes with context hydration, entity resolution, thought-routing, urgency assessment, and knowledge persistence.
+triggers:
+  - process meeting notes
+  - meeting follow-up
+  - extract action items from meeting
+  - drill meeting
+  - post meeting
 ---
 
 # Post-Meeting Drill Skill
