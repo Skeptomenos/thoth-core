@@ -23,3 +23,9 @@ export {
   type TemporalAwarenessHook,
   type TemporalAwarenessConfig,
 } from "./temporal-awareness";
+
+export {
+  createFrontmatterEnforcerHook,
+  type FrontmatterEnforcerHook,
+  type FrontmatterEnforcerConfig,
+} from "./frontmatter-enforcer";

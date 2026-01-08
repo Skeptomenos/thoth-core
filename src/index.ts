@@ -6,6 +6,7 @@ import {
   createTrustLevelTrackerHook,
   createContextApertureHook,
   createTemporalAwarenessHook,
+  createFrontmatterEnforcerHook,
 } from "./hooks";
 import { createDirectoryAgentsInjectorHook } from "./hooks/directory-agents-injector";
 import {
@@ -160,6 +161,10 @@ const ThothPlugin: Plugin = async (ctx) => {
     ? createTemporalAwarenessHook()
     : null;
 
+  const frontmatterEnforcer = hooksConfig["frontmatter-enforcer"] !== false
+    ? createFrontmatterEnforcerHook({ knowledgeBasePath })
+    : null;
+
   const todoContinuationEnforcer = hooksConfig["todo-continuation"] !== false
     ? createTodoContinuationEnforcer(ctx)
     : null;
@@ -304,11 +309,13 @@ const ThothPlugin: Plugin = async (ctx) => {
       await temporalAwareness?.["tool.execute.before"]?.(input, output);
       await contextAperture?.["tool.execute.before"]?.(input, output);
       await trustLevelTracker?.["tool.execute.before"]?.(input, output);
+      await frontmatterEnforcer?.["tool.execute.before"]?.(input, output);
     },
 
     "tool.execute.after": async (input, output) => {
       await trustLevelTracker?.["tool.execute.after"]?.(input, output);
       await contextAperture?.["tool.execute.after"]?.(input, output);
+      await frontmatterEnforcer?.["tool.execute.after"]?.(input, output);
       await directoryAgentsInjector?.["tool.execute.after"]?.(
         input as { tool: string; sessionID: string; callID: string },
         output as { title: string; output: string; metadata: unknown }

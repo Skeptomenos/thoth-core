@@ -15,6 +15,7 @@ const HooksConfigSchema = z.object({
   "temporal-awareness": z.boolean().optional(),
   "knowledge-persistence": z.boolean().optional(),
   "directory-agents-injector": z.boolean().optional(),
+  "frontmatter-enforcer": z.boolean().optional(),
   // Shared hooks (from oh-my-opencode)
   "todo-continuation": z.boolean().optional(),
   "session-recovery": z.boolean().optional(),
