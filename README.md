@@ -191,6 +191,9 @@ Skills are defined in `.opencode/skill/` with YAML frontmatter:
 ---
 name: my-skill
 description: Use when [specific triggers]. Third person.
+triggers:
+  - phrase that activates this skill
+  - another trigger phrase
 ---
 
 # My Skill
@@ -209,6 +212,8 @@ description: Use when [specific triggers]. Third person.
 | Mistake | Prevention |
 |---------|------------|
 ```
+
+The `triggers` field enables automatic skill invocation when the user's message matches.
 
 ## Sub-Agents
 
