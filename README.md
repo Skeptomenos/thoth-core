@@ -4,6 +4,96 @@
 
 Thoth is a knowledge-based life operating system that acts as your chief of staff. Unlike traditional coding assistants, Thoth is designed to **support, guide, and mentor** — not just write code.
 
+## Installation
+
+### Via npm (Recommended)
+
+```bash
+npm install -g thoth-plugin
+```
+
+Then add to your OpenCode config (`~/.config/opencode/opencode.json`):
+
+```json
+{
+  "plugin": [
+    "thoth-plugin"
+  ]
+}
+```
+
+### Initialize Your Knowledge Base
+
+```bash
+# Create a new knowledge base with default structure
+npx thoth-plugin init
+
+# Or initialize in a specific directory
+npx thoth-plugin init ./my-thoth-kb
+```
+
+### Configure Knowledge Base Path
+
+Create `~/.config/opencode/thoth-plugin.json`:
+
+```json
+{
+  "enabled": true,
+  "knowledge_base": "/path/to/your/thoth-kb"
+}
+```
+
+---
+
+## LLM Installation Instructions
+
+<!-- 
+INSTRUCTIONS FOR AI ASSISTANTS:
+
+When a user asks you to "install Thoth plugin" or provides a link to this repository,
+follow these steps:
+
+1. Install the plugin globally:
+   npm install -g thoth-plugin
+
+2. Add to OpenCode config (~/.config/opencode/opencode.json):
+   - Read the existing config file
+   - Add "thoth-plugin" to the "plugin" array
+   - If "plugin" array doesn't exist, create it
+
+3. Initialize the knowledge base:
+   npx thoth-plugin init ~/thoth-kb
+
+4. Configure the knowledge base path (~/.config/opencode/thoth-plugin.json):
+   {
+     "enabled": true,
+     "knowledge_base": "/Users/<username>/thoth-kb"
+   }
+
+5. Restart OpenCode to load the plugin
+
+EXAMPLE COMMANDS:
+```bash
+# Install
+npm install -g thoth-plugin
+
+# Add to OpenCode config
+# Edit ~/.config/opencode/opencode.json and add "thoth-plugin" to plugin array
+
+# Initialize knowledge base
+npx thoth-plugin init ~/thoth-kb
+
+# Create thoth config
+echo '{"enabled": true, "knowledge_base": "'$HOME'/thoth-kb"}' > ~/.config/opencode/thoth-plugin.json
+
+# Restart OpenCode
+```
+-->
+
+If you're an AI assistant helping a user install Thoth, see the HTML comment above for step-by-step instructions.
+
+---
+
 ## Features
 
 - **Four Hemispheres**: Organized knowledge across work, life, coding, and system (kernel)
@@ -11,6 +101,7 @@ Thoth is a knowledge-based life operating system that acts as your chief of staf
 - **Smart Delegation**: Routes tasks to specialized sub-agents (Work Master, Life Master, Code Master)
 - **Permission System**: Critical actions require explicit approval
 - **Knowledge Persistence**: Learns and remembers across sessions
+- **Skill System**: Automatic skill triggers for common workflows (morning boot, email triage, etc.)
 
 ## Depth-Based Specialization
 
@@ -18,56 +109,101 @@ Thoth's personality and expertise change based on your current directory:
 
 | Depth | Example | Persona |
 |-------|---------|---------|
-| 0 | `/thoth/` | Pure Chief of Staff |
-| 1 | `/thoth/work/` | Executive COS (crisp, P0-focused) |
-| 1 | `/thoth/life/` | Personal Consultant (warm, Socratic) |
-| 2 | `/thoth/work/projects/` | Project Portfolio Manager |
-| 3 | `/thoth/work/projects/x/` | Deep Expert on Project X |
-
-See [Persona Building Guide](kernel/knowledge/persona-building.md) for details.
+| 0 | `/thoth-kb/` | Pure Chief of Staff |
+| 1 | `/thoth-kb/work/` | Executive COS (crisp, P0-focused) |
+| 1 | `/thoth-kb/life/` | Personal Consultant (warm, Socratic) |
+| 2 | `/thoth-kb/work/projects/` | Project Portfolio Manager |
+| 3 | `/thoth-kb/work/projects/x/` | Deep Expert on Project X |
 
 ## Structure
 
 ```
-thoth/
-├── kernel/          # System config, memory, standards
-├── work/            # Professional life
-├── life/            # Personal life  
-├── coding/          # Technical projects
-└── src/             # OpenCode plugin source
+thoth-kb/                    # Your knowledge base
+├── kernel/                  # System config, memory, standards
+├── work/                    # Professional life
+├── life/                    # Personal life  
+├── coding/                  # Technical projects
+└── .opencode/skill/         # Custom skills
 ```
 
-## As an OpenCode Plugin
+## Skills
 
-Thoth is also an [OpenCode](https://github.com/nichochar/opencode) plugin that provides:
+Thoth includes built-in skills that trigger automatically based on your intent:
 
-- **Thoth Agent**: Primary orchestrator with depth-based specialization
-- **Sub-Agents**: Work Master, Life Master, Code Master, Coach, Sentinel, Diplomat, Chronicler
-- **Hooks**: Permission enforcement, trust tracking, context management
-- **Skills**: Morning boot, evening close, thought routing, meeting processing
+| Trigger Phrases | Skill |
+|-----------------|-------|
+| "start my day", "morning routine", "prepare me for the day" | morning-boot |
+| "end of day", "wrap up", "evening summary" | evening-close |
+| "check my email", "email triage" | mail-triage |
+| "check slack", "slack mentions" | slack-pulse |
+| "brain dump", "capture this" | thought-router |
 
-### Installation
+Skills are defined in `.opencode/skill/` and can include custom triggers in their frontmatter:
 
-```bash
-# In your opencode config
+```yaml
+---
+name: my-skill
+description: What this skill does
+triggers:
+  - phrase that activates this skill
+  - another trigger phrase
+---
+```
+
+## Sub-Agents
+
+Thoth delegates to specialized agents:
+
+| Agent | Role |
+|-------|------|
+| Work Master | Professional life orchestrator |
+| Life Master | Personal life orchestrator |
+| Code Master | Technical projects (Sisyphus-quality code) |
+| Coach | Reflection and thinking partner |
+| Sentinel | Proactive monitoring |
+| Diplomat | Communication drafting |
+| Chronicler | Meeting and event processing |
+
+## Configuration
+
+### Global Config
+
+`~/.config/opencode/thoth-plugin.json`:
+
+```json
 {
-  "plugins": ["path/to/thoth"]
+  "enabled": true,
+  "knowledge_base": "/path/to/your/thoth-kb"
 }
 ```
 
-### Building
+### Local Override
 
-```bash
-npm install
-npm run build
+`.opencode/thoth-plugin.json` in any workspace:
+
+```json
+{
+  "knowledge_base": "./relative/path/to/kb"
+}
 ```
 
-## Documentation
+## Development
 
-- [**Thoth User Guide**](kernel/knowledge/thoth-user-guide.md) - Comprehensive guide to capabilities, usage, and configuration
-- [Vision](kernel/knowledge/vision.md) - Chief of Staff philosophy
-- [Persona Building](kernel/knowledge/persona-building.md) - How depth-based specialization works
-- [Plugin Architecture](kernel/knowledge/plugin-architecture.md) - Technical architecture
+### Building from Source
+
+```bash
+git clone https://github.com/Skeptomenos/thoth-core.git
+cd thoth-core
+bun install
+bun run build
+```
+
+### Development Workflow
+
+1. Edit source in `src/`
+2. Build: `bun run build`
+3. Test locally: Add absolute path to OpenCode config
+4. Publish: `npm version patch && npm publish`
 
 ## Philosophy
 
@@ -79,6 +215,11 @@ Thoth operates on these principles:
 4. **Cross-domain synthesis** — Can connect insights across hemispheres
 5. **Continuous learning** — Persists learnings to the knowledge base
 
+## Links
+
+- **npm**: https://www.npmjs.com/package/thoth-plugin
+- **GitHub**: https://github.com/Skeptomenos/thoth-core
+
 ## License
 
-Private repository.
+MIT
