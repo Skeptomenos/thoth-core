@@ -138,16 +138,76 @@ Thoth includes built-in skills that trigger automatically based on your intent:
 | "check slack", "slack mentions" | slack-pulse |
 | "brain dump", "capture this" | thought-router |
 
-Skills are defined in `.opencode/skill/` and can include custom triggers in their frontmatter:
+### Managing Skills
+
+```bash
+# List all available skills
+npx thoth-plugin skill list
+
+# Update skills to latest version (interactive)
+npx thoth-plugin skill update
+```
+
+The `skill update` command:
+- Compares your local skills with the latest package
+- Shows what's new, updated, or locally modified
+- Prompts for confirmation before each update
+- Offers to help you contribute back if your local version is more advanced
+
+### Skill Distribution Architecture
+
+```
+thoth-core (this repo)              thoth-kb (your knowledge base)
+├── defaults/skill/        ──────>  ├── .opencode/skill/
+│   ├── skill-generator/    copy    │   ├── skill-generator/
+│   ├── email-draft/        on      │   ├── email-draft/
+│   ├── morning-boot/       init    │   ├── morning-boot/
+│   └── ...                 or      │   └── my-local-skill/
+└── src/cli.ts              update  └── ...
+```
+
+**Key principles:**
+- **Source of truth**: `thoth-core/defaults/skill/` is canonical
+- **All skills are public**: Personalization via knowledge base files, not skill forks
+- **Distribution via npm**: Skills ship with the package
+- **Contribute back**: Local improvements can be PR'd to thoth-core
+
+### Creating Skills
+
+Skills follow a TDD-inspired process (RED-GREEN-REFACTOR):
+
+1. **RED**: Test baseline behavior without the skill (using subagent)
+2. **GREEN**: Write minimal skill that fixes the failure
+3. **REFACTOR**: Close loopholes, add to rationalization table
+
+Use the `skill-generator` skill:
+```
+/skill-generator
+```
+
+Skills are defined in `.opencode/skill/` with YAML frontmatter:
 
 ```yaml
 ---
 name: my-skill
-description: What this skill does
-triggers:
-  - phrase that activates this skill
-  - another trigger phrase
+description: Use when [specific triggers]. Third person.
 ---
+
+# My Skill
+
+**Core principle:** One sentence summary.
+
+## When to Use
+- Trigger condition 1
+- Trigger condition 2
+
+## Quick Reference
+| Task | Action |
+|------|--------|
+
+## Common Mistakes
+| Mistake | Prevention |
+|---------|------------|
 ```
 
 ## Sub-Agents
