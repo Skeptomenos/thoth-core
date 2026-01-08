@@ -1,6 +1,15 @@
 ---
 name: email-draft
 description: Use when drafting emails, composing replies, or writing professional messages that will be sent via Gmail.
+triggers:
+  - draft email
+  - draft a reply
+  - write an email
+  - respond to email
+  - compose email
+  - reply to this email
+  - help me write an email
+  - email response
 ---
 
 # Email Draft

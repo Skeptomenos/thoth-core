@@ -115,8 +115,25 @@ Address the specific failures documented in Phase 1.
 ---
 name: lowercase-with-hyphens
 description: Use when [specific triggers]. Third person. No workflow summary.
+triggers:
+  - phrase that activates this skill
+  - another trigger phrase
+  - variations users might say
 ---
 ```
+
+**Frontmatter Rules:**
+
+| Field | Purpose | Rules |
+|-------|---------|-------|
+| `name` | Skill identifier | lowercase, hyphens only |
+| `description` | Injected into system prompt for skill discovery | Start with "Use when...", third person, no workflow summary |
+| `triggers` | **Automatic skill invocation** | Phrases users say that should activate this skill |
+
+**Triggers are critical** — they teach Thoth when to use the skill automatically. Include:
+- Direct commands ("check my email")
+- Natural phrases ("what's in my inbox")
+- Variations ("email triage", "process inbox")
 
 **Description Rules:**
 - ✅ Start with "Use when..."
@@ -249,6 +266,7 @@ For each new rationalization found in Phase 3:
 - [ ] Name: lowercase, hyphens only, no special chars
 - [ ] Description: starts with "Use when...", no workflow summary
 - [ ] Description: third person, under 500 chars
+- [ ] **Triggers: list of phrases that activate this skill**
 - [ ] Has "Core principle" statement
 - [ ] Has "When to Use" section
 - [ ] Has "Quick Reference" table
@@ -298,6 +316,7 @@ wc -l .opencode/skill/{name}/SKILL.md
 - Skipping baseline test for ANY skill type
 - "I already know what will fail" without running subagent
 - Description summarizes workflow ("scans X, extracts Y, outputs Z")
+- **Missing `triggers:` in frontmatter** — skill won't be auto-invoked
 - Missing "When to Use" section
 - No Quick Reference table
 - "I'll test it later"
