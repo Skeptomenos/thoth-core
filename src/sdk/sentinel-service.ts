@@ -363,7 +363,7 @@ export function createDeepResearchWorkflow(): WorkflowDefinition {
 export function createMorningBootWorkflow(): WorkflowDefinition {
   return {
     name: "morning-boot",
-    description: "Daily morning briefing and task prioritization",
+    description: "Daily morning briefing reminder - triggers skill execution",
     triggers: [
       {
         type: "schedule",
@@ -374,53 +374,14 @@ export function createMorningBootWorkflow(): WorkflowDefinition {
     quietHours: { start: "22:00", end: "07:00" },
     execute: async (context) => {
       const { client, temporal } = context;
-
-      const [email, calendar, tasks] = await client.runParallel([
-        {
-          prompt: `Scan emails from the last 12 hours. Categorize by urgency (P0/P1/P2). Today is ${temporal.dayOfWeek}, ${temporal.date}.`,
-          options: { title: "Email Scan" },
-        },
-        {
-          prompt: `Analyze today's calendar. Identify prep needed for meetings. Today is ${temporal.dayOfWeek}, ${temporal.date}.`,
-          options: { title: "Calendar Scan" },
-        },
-        {
-          prompt: `Check for overdue or at-risk tasks. Today is ${temporal.dayOfWeek}, ${temporal.date}.`,
-          options: { title: "Task Scan" },
-        },
-      ]);
-
-      const synthesis = await client.runSession(
-        `Create a morning briefing from these scans:
-        
-        EMAIL: ${email.response}
-        
-        CALENDAR: ${calendar.response}
-        
-        TASKS: ${tasks.response}
-        
-        Provide:
-        1. Top 3 priorities for today
-        2. Any urgent items needing immediate attention
-        3. Suggested focus blocks
-        
-        Also generate the content for the daily log file.`,
-        { title: "Morning Synthesis" }
+      
+      await client.notify(
+        `Good morning! It's ${temporal.dayOfWeek}, ${temporal.date}. ` +
+        `Say "start my day" to run your morning boot routine.`,
+        "info"
       );
 
-      const logDir = `work/operations/daily-log/${temporal.date}`;
-      
-      try {
-        await client.writeFile(`${logDir}/mail-triage.md`, email.response);
-        await client.writeFile(`${logDir}/cal-grid.md`, calendar.response);
-        await client.writeFile(`${logDir}/task-scan.md`, tasks.response);
-        await client.writeFile(`${logDir}/briefing.md`, synthesis.response);
-        await client.notify(`Morning boot completed. Logs saved to ${logDir}`, "success");
-      } catch (err) {
-        await client.notify(`Morning boot logs failed to save: ${err}`, "warning");
-      }
-
-      return synthesis.response;
+      return "Morning boot reminder sent.";
     },
   };
 }

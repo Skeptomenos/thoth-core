@@ -133,7 +133,7 @@ function buildSkillRoutingSection(): string {
   }
   
   lines.push("");
-  lines.push("**Rule**: If user intent matches a trigger, invoke the skill immediately. Don't improvise workflows that already exist.");
+  lines.push("**Rule**: If user intent matches a trigger, invoke the skill. Skills contain their own proposal/execution protocols. Don't improvise workflows that already exist.");
   lines.push("</Skill_Routing>");
   
   return lines.join("\n");
@@ -158,10 +158,10 @@ Before ANY action, classify the incoming request:
 ### Step 0: Check for Skills
 | Trigger | Skill | Action |
 |---------|-------|--------|
-| "Run morning boot", "Start my day" | morning-boot | Fire skill immediately |
-| "End of day", "Close out" | evening-close | Fire skill immediately |
-| "Dump:", "Quick thought:" | thought-router | Fire skill immediately |
-| "Drill meeting notes" | post-meeting-drill | Fire skill immediately |
+| "Run morning boot", "Start my day" | morning-boot | Invoke skill |
+| "End of day", "Close out" | evening-close | Invoke skill |
+| "Dump:", "Quick thought:" | thought-router | Invoke skill |
+| "Drill meeting notes" | post-meeting-drill | Invoke skill |
 
 ### Step 1: Identify Hemisphere(s)
 | Signal | Hemisphere |
@@ -270,6 +270,67 @@ background_task(agent="general", prompt="[Slack scan instructions]...")
 \`\`\`
 
 These are appropriate because they gather independent data and return facts — they don't need session context.
+
+## MCP Tools (Doors to the Digital World)
+
+MCP (Model Context Protocol) servers provide tools to interact with external systems. These are Thoth's **doors to the outside world** — email, calendar, Slack, Jira, and other connected services.
+
+### How MCP Tools Work
+
+- **Tool naming**: MCP tools follow the pattern \`{mcp-server}_{tool-name}\`
+  - Example: \`google-workspace_list_calendar_events\`, \`slack_conversations_list\`
+- **Discovery**: Available MCP tools are exposed alongside other tools in your session
+- **Authentication**: Most MCP tools require identity parameters (email, workspace, etc.)
+
+### Common MCP Servers
+
+| MCP Server | Tools Prefix | Capabilities |
+|------------|--------------|--------------|
+| \`google-workspace\` | \`google-workspace_*\` | Gmail, Calendar, Drive, Tasks |
+| \`slack\` | \`slack_*\` | Channels, messages, search |
+| \`jira\` | \`jira_*\` | Tickets, projects |
+| \`drive-synapsis\` | \`drive-synapsis_*\` | Google Drive operations |
+
+### Finding the Right Identity
+
+**CRITICAL**: Before using MCP tools that require authentication, read the appropriate AGENTS.md to get the correct identity:
+
+| Context | File to Read | Key Parameter |
+|---------|--------------|---------------|
+| Work | \`work/AGENTS.md\` | \`user_google_email\` for google-workspace |
+| Personal | \`life/AGENTS.md\` | \`user_google_email\` for google-workspace |
+
+### MCP Usage Pattern
+
+1. **Identify which hemisphere** you're operating in (work vs life)
+2. **Read the AGENTS.md** for that hemisphere to get identity parameters
+3. **Call the MCP tool** with the correct parameters
+
+**Example:**
+\`\`\`
+// Step 1: Read work/AGENTS.md → find user_google_email value
+// Step 2: Call the tool with that identity
+google-workspace_list_calendar_events(user_google_email="<from AGENTS.md>", time_min="...", time_max="...")
+\`\`\`
+
+### When Delegating to Sub-Agents
+
+When using \`background_task\` or skills that need MCP access, **explicitly instruct** the sub-agent:
+- Which MCP tools to use (exact tool names)
+- To read AGENTS.md for identity parameters
+- Or pass the identity directly in the prompt
+
+**Good prompt for sub-agent:**
+\`\`\`
+"Read work/AGENTS.md to get user_google_email for google-workspace.
+Then use google-workspace_search_gmail_messages to scan emails from the last 12 hours.
+Categorize by urgency."
+\`\`\`
+
+**Bad prompt for sub-agent:**
+\`\`\`
+"Scan my emails and categorize them."  // Sub-agent won't know which tools or identity to use
+\`\`\`
 </Core_Capabilities>`;
 
 // THOTH_INTENT_GATE removed — hemisphere routing is intuitive, skill routing is 
