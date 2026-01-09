@@ -393,18 +393,32 @@ export function createMorningBootWorkflow(): WorkflowDefinition {
       const synthesis = await client.runSession(
         `Create a morning briefing from these scans:
         
-EMAIL: ${email.response}
-
-CALENDAR: ${calendar.response}
-
-TASKS: ${tasks.response}
-
-Provide:
-1. Top 3 priorities for today
-2. Any urgent items needing immediate attention
-3. Suggested focus blocks`,
+        EMAIL: ${email.response}
+        
+        CALENDAR: ${calendar.response}
+        
+        TASKS: ${tasks.response}
+        
+        Provide:
+        1. Top 3 priorities for today
+        2. Any urgent items needing immediate attention
+        3. Suggested focus blocks
+        
+        Also generate the content for the daily log file.`,
         { title: "Morning Synthesis" }
       );
+
+      const logDir = `work/operations/daily-log/${temporal.date}`;
+      
+      try {
+        await client.writeFile(`${logDir}/mail-triage.md`, email.response);
+        await client.writeFile(`${logDir}/cal-grid.md`, calendar.response);
+        await client.writeFile(`${logDir}/task-scan.md`, tasks.response);
+        await client.writeFile(`${logDir}/briefing.md`, synthesis.response);
+        await client.notify(`Morning boot completed. Logs saved to ${logDir}`, "success");
+      } catch (err) {
+        await client.notify(`Morning boot logs failed to save: ${err}`, "warning");
+      }
 
       return synthesis.response;
     },

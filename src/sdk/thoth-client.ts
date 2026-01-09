@@ -1,5 +1,8 @@
 import { createOpencodeClient, createOpencode, type OpencodeClient } from "@opencode-ai/sdk";
 import { log } from "../shared";
+import { writeFile } from "fs/promises";
+import { dirname } from "path";
+import { mkdir } from "fs/promises";
 
 export interface ThothClientConfig {
   baseUrl?: string;
@@ -247,6 +250,15 @@ export class ThothClient {
       });
     } catch (err) {
       log(`Failed to show toast: ${err}`);
+    }
+  }
+
+  async writeFile(path: string, content: string): Promise<void> {
+    try {
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, content, "utf-8");
+    } catch (err) {
+      throw new Error(`Failed to write file ${path}: ${err}`);
     }
   }
 
