@@ -26,6 +26,7 @@ import {
   createBackgroundCancel,
   createSkillTool,
 } from "./tools";
+import { SkillRegistry } from "./services";
 import { ThothPluginConfigSchema, type ThothPluginConfig } from "./config";
 import { log, deepMerge, getUserConfigDir, expandPath } from "./shared";
 import {
@@ -134,6 +135,20 @@ function resolveKnowledgeBasePath(config: ThothPluginConfig, directory: string):
   return commonLocations[0];
 }
 
+import {
+  SentinelService,
+  createMorningBootWorkflow,
+  createDeepResearchWorkflow,
+  createInboxWatcherWorkflow,
+  createCalendarWatcherWorkflow,
+  createTaskWatcherWorkflow,
+  createSystemWatcherWorkflow,
+  createThothClient,
+} from "./sdk";
+
+// Global Sentinel instance
+let sentinelService: SentinelService | null = null;
+
 const ThothPlugin: Plugin = async (ctx) => {
   const pluginConfig = loadPluginConfig(ctx.directory);
 
@@ -141,6 +156,39 @@ const ThothPlugin: Plugin = async (ctx) => {
     log("Thoth plugin disabled via config");
     return {};
   }
+
+  const sentinelConfig = pluginConfig.sentinel;
+  if (sentinelConfig?.enabled !== false && !sentinelService) {
+    try {
+      const client = await createThothClient({
+        client: ctx.client,
+      });
+
+      sentinelService = new SentinelService(client, {
+        pollIntervalMs: sentinelConfig?.poll_interval_ms,
+        quietHours: sentinelConfig?.quiet_hours,
+        enabled: sentinelConfig?.enabled,
+      });
+
+      sentinelService.registerWorkflow(createMorningBootWorkflow());
+      sentinelService.registerWorkflow(createDeepResearchWorkflow());
+      
+      sentinelService.registerWorkflow(createInboxWatcherWorkflow());
+      sentinelService.registerWorkflow(createCalendarWatcherWorkflow());
+      sentinelService.registerWorkflow(createTaskWatcherWorkflow());
+      sentinelService.registerWorkflow(createSystemWatcherWorkflow());
+
+      await sentinelService.start();
+      log("Sentinel Service initialized and started");
+    } catch (err) {
+      log("Failed to initialize Sentinel Service:", err);
+    }
+  }
+
+
+
+  // ... rest of the plugin ...
+
 
   const knowledgeBasePath = resolveKnowledgeBasePath(pluginConfig, ctx.directory);
   log(`Knowledge base path: ${knowledgeBasePath}`);
@@ -212,7 +260,11 @@ const ThothPlugin: Plugin = async (ctx) => {
   const backgroundTask = createBackgroundTask(backgroundManager);
   const backgroundOutput = createBackgroundOutput(backgroundManager, ctx.client);
   const backgroundCancel = createBackgroundCancel(backgroundManager, ctx.client);
-  const skillTool = createSkillTool();
+  
+  const skillRegistry = new SkillRegistry();
+  await skillRegistry.loadSkills();
+  
+  const skillTool = createSkillTool(skillRegistry);
 
   if (sessionRecoveryHook && todoContinuationEnforcer) {
     sessionRecoveryHook.setOnAbortCallback((sessionID) => {

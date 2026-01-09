@@ -1,13 +1,15 @@
 ---
 name: thought-router
-description: Quick capture tool that routes unstructured brain dumps to their correct home in the Thoth knowledge base.
-triggers:
-  - quick thought
-  - capture this
-  - brain dump
-  - remember this
-  - note this down
-  - dump
+version: 1.0.0
+description: The thought(s) to capture
+triggers: 
+inputs: 
+- name: content
+type: markdown
+required: true
+output: 
+created: 2026-01-09
+updated: 2026-01-09
 ---
 
 # Thought Router Skill

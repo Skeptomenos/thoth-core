@@ -4,6 +4,22 @@
 
 Thoth is a knowledge-based life operating system that acts as your chief of staff. Unlike traditional coding assistants, Thoth is designed to **support, guide, and mentor** — not just write code.
 
+---
+
+## Ecosystem Integration
+
+Thoth is the convergence of multiple OpenCode innovations. It is built upon and integrates with:
+
+- **[OpenCode](https://github.com/opencode-ai/opencode)**: The foundational AI plugin architecture.
+- **[OhMyOpenCode](https://github.com/code-yeongyu/oh-my-opencode)**: The "batteries-included" framework that inspired Thoth's distribution model.
+- **[Personal-OS](https://github.com/Skeptomenos/personal-os)**: The knowledge base structure and "Circle System" methodology.
+- **[OpenProse](https://github.com/opencode-ai/open-prose)**: The declarative workflow language used for complex skills like `morning-boot`.
+- **[Vibe-Kanban](https://github.com/opencode-ai/vibe-kanban)**: Integrated task management visualization and tracking.
+
+Thoth acts as the **Root Orchestrator**, coordinating these tools into a unified "Operating System for Life".
+
+---
+
 ## Installation
 
 ### Via npm (Recommended)

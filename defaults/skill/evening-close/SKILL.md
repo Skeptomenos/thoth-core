@@ -1,13 +1,12 @@
 ---
 name: evening-close
+version: 1.0.0
 description: Summarize the day, extract incomplete tasks into tomorrow's overflow, and persist daily learnings to the Knowledge Base.
-triggers:
-  - end of day
-  - close out
-  - wrap up the day
-  - evening summary
-  - what did I accomplish
-  - end my day
+triggers: 
+output: 
+type: markdown
+created: 2026-01-09
+updated: 2026-01-09
 ---
 
 # Evening Close Skill

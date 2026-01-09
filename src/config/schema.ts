@@ -39,9 +39,19 @@ const IntegrationsConfigSchema = z.object({
   drive_sync: z.boolean().optional(),
 }).strict();
 
+const SentinelConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  poll_interval_ms: z.number().min(1000).optional(),
+  quiet_hours: z.object({
+    start: z.string().regex(/^\d{2}:\d{2}$/),
+    end: z.string().regex(/^\d{2}:\d{2}$/),
+  }).optional(),
+}).strict();
+
 export const ThothPluginConfigSchema = z.object({
   enabled: z.boolean().optional(),
   knowledge_base: z.string().optional(),
+  sentinel: SentinelConfigSchema.optional(),
   agents: z.object({
     thoth: AgentOverrideSchema.optional(),
     "work-master": AgentOverrideSchema.optional(),
@@ -62,6 +72,7 @@ export type ThothPluginConfig = z.infer<typeof ThothPluginConfigSchema>;
 export type AgentOverride = z.infer<typeof AgentOverrideSchema>;
 export type HooksConfig = z.infer<typeof HooksConfigSchema>;
 export type SkillsConfig = z.infer<typeof SkillsConfigSchema>;
+export type SentinelConfig = z.infer<typeof SentinelConfigSchema>;
 export type IntegrationsConfig = z.infer<typeof IntegrationsConfigSchema>;
 
 export type HookName = keyof NonNullable<ThothPluginConfig["hooks"]>;

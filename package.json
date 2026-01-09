@@ -9,7 +9,8 @@
     "thoth": "./dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "defaults"
   ],
   "exports": {
     ".": {
@@ -21,6 +22,8 @@
   "scripts": {
     "build": "bun build src/index.ts src/cli.ts --outdir dist --target bun --format esm && cp -r defaults dist/ && (tsc --emitDeclarationOnly || true) && bun run build:schema",
     "build:schema": "bun run script/build-schema.ts",
+    "lint:skills": "bun run script/lint-skills.ts",
+    "test:skills": "bun run script/test-skills.ts",
     "clean": "rm -rf dist",
     "prepublishOnly": "bun run clean && bun run build",
     "typecheck": "tsc --noEmit",
@@ -44,11 +47,13 @@
   },
   "dependencies": {
     "@opencode-ai/plugin": "^1.0.162",
+    "@opencode-ai/sdk": "^1.0.162",
     "zod": "^4.1.8"
   },
   "devDependencies": {
     "bun-types": "latest",
     "typescript": "^5.7.3",
-    "zod-to-json-schema": "^3.25.1"
+    "zod-to-json-schema": "^3.25.1",
+    "yaml": "^2.7.0"
   }
 }

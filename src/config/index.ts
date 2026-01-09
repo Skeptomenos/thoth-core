@@ -4,6 +4,7 @@ export {
   type AgentOverride,
   type HooksConfig,
   type SkillsConfig,
+  type SentinelConfig,
   type IntegrationsConfig,
   type HookName,
   type SkillName,

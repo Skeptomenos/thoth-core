@@ -1,12 +1,16 @@
 ---
 name: slack-pulse
-description: Scan Slack for mentions, high-value DMs, and informal requests using the Thoth standard protocol.
-triggers:
-  - check slack
-  - slack mentions
-  - what's happening on slack
-  - any slack messages
-  - scan slack
+version: 1.0.0
+description: Lookback window in hours
+triggers: 
+inputs: 
+- name: hours
+type: markdown
+required: false
+default: 4
+output: 
+created: 2026-01-09
+updated: 2026-01-09
 ---
 
 # Slack Pulse Skill
