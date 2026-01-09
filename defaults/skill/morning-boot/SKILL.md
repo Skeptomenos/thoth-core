@@ -1,6 +1,6 @@
 ---
 name: morning-boot
-version: 1.0.0
+version: 2.0.0
 description: Operational mode (e.g. 'deep-work', 'maintenance')
 triggers: 
 inputs: 
@@ -9,7 +9,6 @@ type: markdown
 required: false
 default: auto
 output: 
-created: 2026-01-09
 updated: 2026-01-09
 ---
 
@@ -19,27 +18,25 @@ You are the **Daily Operations Orchestrator**. Your goal is to gather all contex
 
 ## Execution Method
 
-This skill uses **OpenProse** for multi-agent orchestration.
+This skill uses the **Sentinel Service** for robust, parallel execution via the SDK.
 
 **To execute this workflow:**
 
-1. Load the OpenProse skill: `/open-prose`
-2. Execute the workflow: `/prose-run kernel/workflows/morning-boot.prose`
+1. Invoke the `trigger_workflow` tool.
+2. Workflow name: `"morning-boot"`
 
-The OpenProse workflow handles:
-- Parallel email, calendar, and Slack scans
-- Operational mode detection
-- Deep work block identification
-- Complexity budget calculation
-- Daily log synthesis
-- Final briefing
+```javascript
+trigger_workflow({ workflow: "morning-boot" })
+```
 
-## Workflow Location
-
-`kernel/workflows/morning-boot.prose`
+The Sentinel workflow handles:
+- Parallel email, calendar, and task scans
+- Synthesis of priorities
+- Creation of the daily log file
+- Generating the morning briefing
 
 ## Technical Constraints
 
-- **Trust Level**: This skill requires Trust Level 2+ for email/calendar access.
-- **OpenProse Required**: The open-prose skill must be available.
-- **Privacy**: Never store raw email/message content in logs - only summaries and action items.
+- **Do NOT** attempt to manually scan emails or calendar. Use the tool.
+- **Do NOT** use `background_task` or `prose-run`.
+- **Trust Level**: Requires Level 2+ (handled by Sentinel permissions).

@@ -25,6 +25,7 @@ import {
   createBackgroundOutput,
   createBackgroundCancel,
   createSkillTool,
+  createSentinelTools,
 } from "./tools";
 import { SkillRegistry } from "./services";
 import { ThothPluginConfigSchema, type ThothPluginConfig } from "./config";
@@ -265,6 +266,11 @@ const ThothPlugin: Plugin = async (ctx) => {
   await skillRegistry.loadSkills();
   
   const skillTool = createSkillTool(skillRegistry);
+  
+  // Create Sentinel tools if enabled
+  const sentinelTools = sentinelService 
+    ? createSentinelTools(sentinelService)
+    : {};
 
   if (sessionRecoveryHook && todoContinuationEnforcer) {
     sessionRecoveryHook.setOnAbortCallback((sessionID) => {
@@ -281,6 +287,7 @@ const ThothPlugin: Plugin = async (ctx) => {
       background_output: backgroundOutput,
       background_cancel: backgroundCancel,
       skill: skillTool,
+      ...sentinelTools,
     },
 
     config: async (config) => {
