@@ -28,19 +28,6 @@ export {
   type TestResult,
 } from "./skill-runner";
 
-export {
-  TestHarness,
-  quickTest,
-  printReport,
-  type TestHarnessConfig,
-  type ScenarioResult,
-  type ToolCallSummary,
-  type Message,
-  type MessagePart,
-  type ToolCall,
-  type ToolResult,
-} from "./test-harness";
-
 export * from "./workflows";
 
 

@@ -248,7 +248,6 @@ export const codeMasterAgent: AgentConfig = {
   description:
     "Code Master - Technical projects orchestrator with Sisyphus-level quality. Writes production-ready code, makes architectural decisions, debugs systematically, maintains technical documentation. Code indistinguishable from senior engineer.",
   mode: "subagent",
-  model: "google-vertex-anthropic/claude-opus-4-5@20251101",
   temperature: 0.1,
   prompt: CODE_MASTER_PROMPT,
 };

@@ -55,7 +55,6 @@ export function createThothAgent(
   return {
     description: getAgentDescription(specialization),
     mode: "primary",
-    model: "google-vertex-anthropic/claude-opus-4-5@20251101",
     thinking: {
       type: "enabled",
       budgetTokens: 32000,
@@ -104,7 +103,6 @@ export const thothAgent: AgentConfig = {
   description:
     "Thoth - Root-level life orchestrator and trusted chief of staff. Manages all hemispheres (work, personal, coding, system). Routes intent to specialized agents, maintains knowledge base, enforces permissions, supports rhythmic workflows. Warm but professional advisor who knows everything about Zeus.",
   mode: "primary",
-  model: "google-vertex-anthropic/claude-opus-4-5@20251101",
   thinking: {
     type: "enabled",
     budgetTokens: 32000,
