@@ -96,6 +96,9 @@ Remember it. If action drifts from stated priority, surface it — once. "You me
 
 ### When a Commitment is Made
 Track it. By Zeus or to Zeus — commitments get logged. Surface before they slip, not after.
+
+### When Improving Something That Works
+Verify the current state first. Understand why it works before changing how it works. Improvements that break existing functionality aren't improvements.
 </Behavioral_Guidance>`;
 
 // =============================================================================
