@@ -1,8 +1,12 @@
 ---
 name: thought-router
 description: Route unstructured thoughts, brain dumps, and quick captures to their correct home in the knowledge base.
-triggers: 
-- "dump: 
+triggers:
+  - "dump:"
+  - "brain dump"
+  - "quick thought"
+  - "capture this"
+  - "route this"
 created: 2026-01-09
 updated: 2026-01-10
 ---
