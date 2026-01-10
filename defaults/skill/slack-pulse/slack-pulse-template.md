@@ -1,7 +1,7 @@
 ---
 type: operations
 hemisphere: work
-created: {{DATE}}
+created: 2026-01-09
 updated: 2026-01-09
 tags: [slack-pulse, daily-log]
 summary: Slack Pulse — {{DATE}}
