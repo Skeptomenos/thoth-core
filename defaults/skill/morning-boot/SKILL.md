@@ -1,7 +1,12 @@
 ---
 name: morning-boot
 description: The master orchestrator for your morning routine. Parallelizes scans across email, calendar, and Slack, then synthesizes into a daily briefing.
-triggers: 
+triggers:
+  - "start my day"
+  - "morning boot"
+  - "prepare my day"
+  - "daily briefing"
+  - "morning routine"
 template: daily-log-template.md
 created: 2026-01-09
 updated: 2026-01-09

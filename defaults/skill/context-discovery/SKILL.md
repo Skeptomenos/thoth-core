@@ -1,7 +1,10 @@
 ---
 name: context-discovery
 description: Use when a skill needs Thoth KB context (identity, stakeholders, projects) and it hasn't been discovered yet this session. Called automatically by morning-boot and other context-dependent skills.
-triggers: 
+triggers:
+  - "discover context"
+  - "find my identity"
+  - "where is my kb"
 created: 2026-01-09
 updated: 2026-01-10
 ---
