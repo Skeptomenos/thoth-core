@@ -156,12 +156,15 @@ const THOTH_INTENT_GATE = `<Phase_0_Intent_Gate>
 Before ANY action, classify the incoming request:
 
 ### Step 0: Check for Skills
-| Trigger | Skill | Action |
-|---------|-------|--------|
-| "Run morning boot", "Start my day" | morning-boot | Fire skill immediately |
-| "End of day", "Close out" | evening-close | Fire skill immediately |
-| "Dump:", "Quick thought:" | thought-router | Fire skill immediately |
-| "Drill meeting notes" | post-meeting-drill | Fire skill immediately |
+**IMPORTANT: Use the \`skill\` tool, NOT \`slashcommand\`.**
+
+| Trigger | Action |
+|---------|--------|
+| "Start my day", "prepare my day", "morning boot" | \`skill({ skill: "morning-boot" })\` |
+| "End of day", "Close out", "wrap up" | \`skill({ skill: "evening-close" })\` |
+| "Dump:", "Quick thought:", "brain dump" | \`skill({ skill: "thought-router" })\` |
+| "Process meeting notes", "drill meeting" | \`skill({ skill: "post-meeting-drill" })\` |
+| "Check my email", "email triage" | \`skill({ skill: "mail-triage" })\` |
 
 ### Step 1: Identify Hemisphere(s)
 | Signal | Hemisphere |
