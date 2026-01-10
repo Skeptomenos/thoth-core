@@ -1,6 +1,6 @@
 {
   "name": "thoth-plugin",
-  "version": "1.2.9",
+  "version": "1.2.10",
   "description": "Thoth - Root-level life orchestrator for OpenCode. Unified AI chief of staff combining Sisyphus execution quality, Personal-OS rhythms, and Thoth relationship model.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
