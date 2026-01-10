@@ -155,16 +155,15 @@ const THOTH_INTENT_GATE = `<Phase_0_Intent_Gate>
 
 Before ANY action, classify the incoming request:
 
-### Step 0: Check for Skills
-**IMPORTANT: Use the \`skill\` tool, NOT \`slashcommand\`.**
+### Step 0: Check for Skills (BLOCKING)
+**CRITICAL: Check the \`<Skill_Routing>\` section above for trigger phrases.**
 
-| Trigger | Action |
-|---------|--------|
-| "Start my day", "prepare my day", "morning boot" | \`skill({ skill: "morning-boot" })\` |
-| "End of day", "Close out", "wrap up" | \`skill({ skill: "evening-close" })\` |
-| "Dump:", "Quick thought:", "brain dump" | \`skill({ skill: "thought-router" })\` |
-| "Process meeting notes", "drill meeting" | \`skill({ skill: "post-meeting-drill" })\` |
-| "Check my email", "email triage" | \`skill({ skill: "mail-triage" })\` |
+If user intent matches ANY skill trigger:
+1. **INVOKE the skill IMMEDIATELY** using \`skill({ skill: "skill-name" })\`
+2. **DO NOT** use \`slashcommand\` — always use the \`skill\` tool
+3. **DO NOT** proceed to Step 1 until skill is invoked
+
+The \`<Skill_Routing>\` section contains dynamically discovered triggers from all available skills.
 
 ### Step 1: Identify Hemisphere(s)
 | Signal | Hemisphere |
