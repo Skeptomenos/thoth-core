@@ -60,7 +60,14 @@ export class SkillRegistry {
       const entries = readdirSync(directory, { withFileTypes: true });
       
       for (const entry of entries) {
-        if (!entry.isDirectory() || entry.name.startsWith(".") || entry.name.startsWith("_")) {
+        // Skip hidden and underscore-prefixed entries
+        if (entry.name.startsWith(".") || entry.name.startsWith("_")) {
+          continue;
+        }
+        
+        // Handle both directories and symlinks to directories
+        const isDir = entry.isDirectory() || entry.isSymbolicLink();
+        if (!isDir) {
           continue;
         }
 

@@ -1,7 +1,14 @@
 ---
 name: google-chat-scan
 description: Use when needing to scan Google Chat spaces for messages, extract action items, summarize conversations, or find specific information in chat history
+triggers: 
+created: 2026-01-07
+updated: 2026-01-10
 ---
+
+<!--
+ARCHITECTURE REFERENCE: docs/concepts/skill-architecture.md
+-->
 
 # Google Chat Scan
 

@@ -1,20 +1,35 @@
 ---
 name: email-draft
 description: Use when drafting emails, composing replies, or writing professional messages that will be sent via Gmail.
-triggers:
-  - draft email
-  - draft a reply
-  - write an email
-  - respond to email
-  - compose email
-  - reply to this email
-  - help me write an email
-  - email response
+triggers: 
+created: 2026-01-09
+updated: 2026-01-10
 ---
+
+<!--
+ARCHITECTURE REFERENCE: docs/concepts/skill-architecture.md
+This skill can be invoked standalone OR as a subagent context template.
+-->
 
 # Email Draft
 
 **Core principle:** Gmail does not support Markdown. Always use HTML formatting with `body_format="html"`.
+
+---
+
+## Context Requirements (EXECUTE FIRST)
+
+This skill requires the user's email address for API calls.
+
+**Step 0 — Get Identity:**
+
+1. **Check if passed in context**: If you received `context.identity.email`, use it directly.
+
+2. **If not passed, invoke context-discovery skill**: Call `skill({ name: "context-discovery" })` and use the returned `email` value.
+
+3. **Store as `EMAIL`** for use in all API calls below.
+
+**If discovery fails**: Stop and report the error from context-discovery.
 
 ---
 
@@ -72,31 +87,18 @@ Format with HTML:
 - `<p>` for paragraph separation
 - `<i>` sparingly for emphasis
 
-### 3. Present for Approval
-
-Show full email in chat before saving:
-
-```
-**Draft ready for review:**
-
----
-[Email content]
----
-
-**To:** recipient
-**CC:** if applicable
-
-Shall I save as draft?
-```
+### 3. Present Final Payload for Approval
+**CRITICAL:** Show Zeus the *exact* final HTML string that will be saved.
+- If HTML conversion changes the wording, you MUST get re-approval.
+- Use a code block to show the verbatim HTML payload.
 
 ### 4. Save Draft
-
 ```python
 google-workspace_draft_gmail_message(
-  user_google_email="david.helmus@hellofresh.com",
+  user_google_email={EMAIL},
   to="recipient@example.com",
   subject="Re: Subject",
-  body="<p>HTML content</p>",
+  body="<p>Approved HTML payload</p>",
   body_format="html",           # CRITICAL
   thread_id="...",              # For replies
   in_reply_to="<message-id>"    # For replies
@@ -110,10 +112,11 @@ google-workspace_draft_gmail_message(
 | Mistake | Prevention |
 |---------|------------|
 | Using Markdown `**bold**` | Use HTML `<b>bold</b>` — Gmail renders Markdown literally |
-| Forgetting `body_format="html"` | Always include — defaults to plain text |
+| Forgetting `body_format="html"` | Always include — plain text drafts have a **known bug** where they open empty in Gmail |
 | Missing `thread_id` on replies | Retrieve from original message first |
 | Sending without approval | Always draft first, ask Zeus to confirm |
-| Using personal email for work | Work context = `david.helmus@hellofresh.com` |
+| Using wrong email | Use `{EMAIL}` from Context Discovery |
+| Calling MCP tool without invoking skill | Always use this skill for email drafts — ensures correct formatting |
 
 ---
 

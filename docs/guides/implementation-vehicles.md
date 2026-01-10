@@ -2,7 +2,7 @@
 type: reference
 hemisphere: kernel
 created: 2026-01-09
-updated: 2026-01-09
+updated: 2026-01-10
 tags: [architecture, development, patterns, vehicles]
 summary: Guide for choosing between system prompt, hooks, skills, and sub-agents when implementing Thoth capabilities
 ---
@@ -102,7 +102,6 @@ Every token in the system prompt is paid on EVERY message. Be ruthless about wha
 | Hook | Purpose |
 |------|---------|
 | `permission-enforcer` | Block unauthorized tool calls |
-| `temporal-awareness` | Block work tools on weekends |
 | `read-confirmation` | Log file reads for audit |
 | `write-confirmation` | Remind about index updates |
 | `frontmatter-enforcer` | Validate KB file structure |

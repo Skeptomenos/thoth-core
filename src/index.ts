@@ -5,7 +5,6 @@ import {
   createPermissionEnforcerHook,
   createTrustLevelTrackerHook,
   createContextApertureHook,
-  createTemporalAwarenessHook,
   createFrontmatterEnforcerHook,
   createReadConfirmationHook,
   createWriteConfirmationHook,
@@ -138,7 +137,6 @@ function resolveKnowledgeBasePath(config: ThothPluginConfig, directory: string):
 
 import {
   SentinelService,
-  createMorningBootWorkflow,
   createDeepResearchWorkflow,
   createInboxWatcherWorkflow,
   createCalendarWatcherWorkflow,
@@ -171,7 +169,8 @@ const ThothPlugin: Plugin = async (ctx) => {
         enabled: sentinelConfig?.enabled,
       });
 
-      sentinelService.registerWorkflow(createMorningBootWorkflow());
+      // Morning boot is implemented as an OpenProse skill, not an SDK workflow
+      // See: thoth-kb/.opencode/skill/morning-boot/morning-boot.prose
       sentinelService.registerWorkflow(createDeepResearchWorkflow());
       
       sentinelService.registerWorkflow(createInboxWatcherWorkflow());
@@ -206,10 +205,6 @@ const ThothPlugin: Plugin = async (ctx) => {
 
   const contextAperture = hooksConfig["context-aperture"] !== false
     ? createContextApertureHook({ knowledgeBasePath })
-    : null;
-
-  const temporalAwareness = hooksConfig["temporal-awareness"] !== false
-    ? createTemporalAwarenessHook()
     : null;
 
   const frontmatterEnforcer = hooksConfig["frontmatter-enforcer"] !== false
@@ -354,7 +349,6 @@ const ThothPlugin: Plugin = async (ctx) => {
 
       await trustLevelTracker?.event(input);
       await contextAperture?.event(input);
-      await temporalAwareness?.event(input);
       await directoryAgentsInjector?.event(input);
 
       await todoContinuationEnforcer?.handler(input);
@@ -376,7 +370,6 @@ const ThothPlugin: Plugin = async (ctx) => {
 
     "tool.execute.before": async (input, output) => {
       await permissionEnforcer?.["tool.execute.before"]?.(input, output);
-      await temporalAwareness?.["tool.execute.before"]?.(input, output);
       await contextAperture?.["tool.execute.before"]?.(input, output);
       await trustLevelTracker?.["tool.execute.before"]?.(input, output);
       await frontmatterEnforcer?.["tool.execute.before"]?.(input, output);

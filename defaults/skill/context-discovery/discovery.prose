@@ -1,0 +1,143 @@
+# Context Discovery Test
+# Validates that AI-driven context discovery works reliably
+
+# Phase 1: Environment Discovery
+let discovery = session "Discover Thoth KB environment"
+  prompt: """
+    You are testing context discovery for Thoth skills.
+    
+    Execute these steps and report findings:
+    
+    ## Step 1: Get Current Location
+    Run `pwd` to get the current working directory.
+    
+    ## Step 2: Find KB Root
+    Walk up the directory tree looking for markers:
+    - `.thoth-root` file (preferred marker)
+    - `.opencode/` directory with thoth configuration
+    - `kernel/` directory (thoth-kb convention)
+    
+    For each parent directory up to filesystem root, check if these exist.
+    Stop when you find a marker.
+    
+    ## Step 3: Determine Hemisphere
+    Look at the CWD path:
+    - If path contains `/work/` → hemisphere is "work"
+    - If path contains `/life/` → hemisphere is "life"  
+    - If path contains `/coding/` → hemisphere is "coding"
+    - Otherwise → hemisphere is "unknown"
+    
+    ## Step 4: Locate Identity Files
+    If KB root was found, check for these files (report exists: true/false):
+    - `{root}/work/_identity.md`
+    - `{root}/life/_identity.md`
+    - `{root}/kernel/config/identity.md` (fallback)
+    
+    ## Step 5: Locate Stakeholder Files
+    Check for:
+    - `{root}/work/people/_index.md`
+    - `{root}/life/people/_index.md`
+    
+    ## Report Format
+    
+    Return a structured report:
+    
+    ```
+    DISCOVERY REPORT
+    ================
+    
+    Current Directory: /path/to/cwd
+    
+    KB Root Search:
+    - Checked: /path/to/cwd → no markers
+    - Checked: /path/to/parent → found .thoth-root
+    - KB Root: /path/to/thoth-kb (or NOT FOUND)
+    
+    Hemisphere Detection:
+    - Path analysis: contains "/work/" 
+    - Detected: work (or life, coding, unknown)
+    
+    Identity Files:
+    - work/_identity.md: EXISTS / MISSING
+    - life/_identity.md: EXISTS / MISSING
+    - kernel/config/identity.md: EXISTS / MISSING
+    - Recommended: {path to use}
+    
+    Stakeholder Files:
+    - work/people/_index.md: EXISTS / MISSING
+    - life/people/_index.md: EXISTS / MISSING
+    
+    Ready Status:
+    - Can run morning boot: YES / NO
+    - Missing required: [list of missing files]
+    - Missing optional: [list of missing files]
+    ```
+  """
+
+# Phase 2: Validate Discovery
+session "Analyze discovery results"
+  prompt: """
+    Based on the discovery results above, answer:
+    
+    1. **Discovery Reliability**: Did the walk-up algorithm successfully 
+       find the KB root? Was the hemisphere correctly inferred?
+    
+    2. **File Resolution**: Were identity and stakeholder files found 
+       where expected? Any surprises?
+    
+    3. **Readiness Assessment**: Could the morning boot skill run with 
+       the discovered context? What's missing?
+    
+    4. **Edge Cases Identified**: Any issues with the discovery approach 
+       that would need handling?
+    
+    5. **Recommendations**: Suggestions to improve the discovery pattern.
+    
+    Be specific and actionable.
+  """
+  context: discovery
+
+# Phase 3: Simulate Morning Boot Context Loading
+if **KB root was found and identity file exists**:
+  let identity = session "Load identity file"
+    prompt: """
+      Read the identity file that was discovered (the recommended one 
+      from the discovery report).
+      
+      Extract:
+      - Email address
+      - Timezone
+      - Any other identity context
+      
+      Report what you found.
+    """
+    context: discovery
+  
+  session "Validate identity is usable"
+    prompt: """
+      The identity file was loaded. Validate:
+      
+      1. Is there an email address we can use for Gmail/Calendar APIs?
+      2. Is there a timezone for scheduling context?
+      3. Is the format parseable and consistent?
+      
+      Report whether this identity context is sufficient for morning boot.
+    """
+    context: identity
+
+else:
+  session "Guide user to set up identity"
+    prompt: """
+      No usable KB root or identity file was found.
+      
+      Guide the user to set this up:
+      
+      1. Explain what's needed (a thoth-kb with identity file)
+      2. Show them the expected structure
+      3. Offer to create a starter identity file if they provide:
+         - Their email address
+         - Their timezone
+      
+      Be helpful and specific about file locations.
+    """
+    context: discovery

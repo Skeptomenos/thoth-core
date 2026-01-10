@@ -1,13 +1,14 @@
 ---
 name: onboarding
 description: Structured onboarding for new domains using breadth-before-depth discovery
-triggers:
-  - "Let's onboard"
-  - "New domain"
-  - "Help me set up"
-  - "Onboard my"
-  - "Learn about my"
+triggers: 
+created: 2026-01-07
+updated: 2026-01-10
 ---
+
+<!--
+ARCHITECTURE REFERENCE: docs/concepts/skill-architecture.md
+-->
 
 # Onboarding Skill
 

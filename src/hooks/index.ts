@@ -19,12 +19,6 @@ export {
 } from "./context-aperture";
 
 export {
-  createTemporalAwarenessHook,
-  type TemporalAwarenessHook,
-  type TemporalAwarenessConfig,
-} from "./temporal-awareness";
-
-export {
   createFrontmatterEnforcerHook,
   type FrontmatterEnforcerHook,
   type FrontmatterEnforcerConfig,

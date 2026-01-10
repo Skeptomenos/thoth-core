@@ -2,9 +2,9 @@
 type: document
 hemisphere: kernel
 created: 2026-01-06
-updated: 2026-01-08
+updated: 2026-01-10
 tags: [architecture, plugin, design]
-summary: "Thoth Plugin Architecture - high-level design and components"
+summary: Thoth Plugin Architecture - high-level design and components
 ---
 
 # Thoth Plugin Architecture
@@ -43,7 +43,7 @@ Thoth is a **unified life orchestrator** that combines:
 
 - **Thoth's Soul**: Chief of Staff relationship, permission system, trust-building arc
 - **Sisyphus's Hands**: Multi-agent parallelism, enforcement hooks, evidence-based completion
-- **ExOS's Heart**: Rhythmic workflows, context aperture, temporal awareness
+- **ExOS's Heart**: Rhythmic workflows, context aperture
 
 The result: An AI that knows you deeply, works with senior-engineer quality, and respects your daily rhythms.
 
@@ -255,23 +255,6 @@ function checkPermission(tool: string, args: unknown): PermissionResult {
 2. **Circle 2 (Territory)**: Specific entity files - IF intent targets them
 3. **Circle 3 (Deep Dive)**: grep/glob - ONLY if Circle 1-2 fail
 
-### Temporal Awareness Hook
-
-**Trigger**: `event` (session.created)  
-**Purpose**: Inject temporal context into session
-
-**Injected Context**:
-```markdown
-<temporal_context>
-  Date: 2025-01-05 (Sunday)
-  Time: 00:51 (Late Night - Restoration Mode)
-  Week: 1 of 52
-  Quarter: Q1
-  Day Mode: Weekend Sanctuary
-  Biological Mode: Restoration (block work unless Emergency P0)
-</temporal_context>
-```
-
 ### Knowledge Persistence Hook
 
 **Trigger**: `event` (session.ended, tool.execute.after for write)  
@@ -296,7 +279,6 @@ Skills are invokable workflows triggered by commands.
 **Protocol**:
 ```
 1. INITIALIZE
-   - Load temporal context (day mode, week, quarter)
    - Read chronicle.md for previous state
    - Read dashboard.md for priorities
    - Load yesterday's overflow
@@ -605,7 +587,6 @@ interface ThothPluginConfig {
     "permission-enforcer"?: boolean;
     "trust-level-tracker"?: boolean;
     "context-aperture"?: boolean;
-    "temporal-awareness"?: boolean;
     "knowledge-persistence"?: boolean;
   };
   
@@ -675,8 +656,7 @@ export OPENCODE_PRIMARY_AGENT=thoth  # or sisyphus
 1. Implement permission-enforcer hook
 2. Implement trust-level-tracker hook
 3. Implement context-aperture hook
-4. Implement temporal-awareness hook
-5. Import and wire Sisyphus hooks (todo-continuation, etc.)
+4. Import and wire Sisyphus hooks (todo-continuation, etc.)
 
 ### Phase 4: Skill System (Day 2-3)
 

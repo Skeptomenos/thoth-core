@@ -1,97 +1,129 @@
 ---
 name: evening-close
-version: 1.0.0
 description: Summarize the day, extract incomplete tasks into tomorrow's overflow, and persist daily learnings to the Knowledge Base.
 triggers: 
-output: 
-type: markdown
+template: evening-close-template.md
 created: 2026-01-09
-updated: 2026-01-09
+updated: 2026-01-10
 ---
+
+<!--
+ARCHITECTURE REFERENCE: docs/concepts/skill-architecture.md
+This skill can be invoked standalone OR as a subagent context template.
+-->
 
 # Evening Close Skill
 
-You are the **Integrity & Persistence Lead**. Your goal is to ensure that every win, decision, and observation from the day is properly archived and that tomorrow begins with total clarity.
-
-## Protocol Execution
-
-### Step 1: Audit
-
-1. **Read Daily Log**: Load today's `work/logs/YYYY-MM-DD-daily-log.md`.
-2. **Verify Progress**:
-   - Compare **Top 3 Priorities** against the **Action Log**.
-   - Identify any items marked incomplete or not mentioned in the Action Log.
-
-### Step 2: Summarize
-
-1. **Generate Executive Recap**:
-   - **Completed**: Count of actions taken.
-   - **Key Wins**: 2-3 most impactful accomplishments.
-   - **Blockers Surfaced**: Any items preventing progress.
-   - **Decisions Logged**: Summary of strategic choices.
-
-2. **Update Log**: Fill in the `## Evening Summary` section of the `daily-log.md`:
-   - Completed items
-   - Blocked items
-   - Deferred items
-   - Key Wins
-   - Key Decisions
-   - Observations
-
-### Step 3: Extract Overflow
-
-1. **Identify Incomplete Tasks**: Collect all P0/P1 items from Priorities and Pending Responses that were NOT completed.
-
-2. **Create Overflow File**: Write to `work/inbox/overflow-YYYY-MM-DD.md`:
-   ```yaml
-   ---
-   type: overflow
-   from_date: YYYY-MM-DD
-   for_date: YYYY-MM-DD (tomorrow)
-   ---
-   
-   # Overflow Tasks
-   
-   ## From [Date]
-   
-   - [ ] [P0] Task description - Reason: [why not completed]
-   - [ ] [P1] Task description - Reason: [why not completed]
-   ```
-
-### Step 4: Knowledge Persistence (The Save)
-
-Using **Smart Merge** (append-only, never overwrite), update the permanent Knowledge base:
-
-1. **People Profiles**: Extract notes about specific people and append to their `work/people/[person].md` in the `## Interaction Log` section with date stamp.
-
-2. **Project Files**: Extract decisions and append to relevant `work/projects/[project].md` in the `## Decisions` section with date stamp.
-
-3. **Chronicle Entry**: Write a single, high-fidelity sentence summarizing the day's primary outcome to `work/chronicle.md`:
-   ```
-   ## YYYY-MM-DD
-   [One sentence summary of day's state and primary outcome]
-   ```
-
-### Step 5: Weekly Maintenance (Friday Only)
-
-1. **Check Date**: Calculate `DayOfWeek` from `<omo-env>`.
-2. **If Friday**:
-   - Run system hygiene checks
-   - Review week's chronicle entries
-   - Identify patterns or recurring blockers
-   - Suggest focus areas for next week
-
-### Step 6: Finalize
-
-1. Verify all file writes were successful.
-2. Present the summary and overflow list to user in chat for final sign-off.
-3. Suggest any preparation needed for tomorrow.
+**Core principle:** Every win, decision, and observation must be archived. Tomorrow begins with total clarity.
 
 ---
 
-## Technical Constraints
+## Context Requirements (EXECUTE FIRST)
 
-- **Smart Merge**: NEVER overwrite existing context. Only append to specific sections with a date stamp.
-- **Accuracy**: Do not hallucinate outcomes. If an item status is unclear, mark it as "UNCLEAR" and ask user.
-- **Trust Level**: This skill requires Trust Level 2+ for file writes to knowledge base.
-- **Privacy**: Summarize sensitive information, don't copy verbatim.
+**Step 0 — Get Identity:**
+
+1. **Check if passed in context**: If `context.identity.kb_root` exists, use it.
+2. **If not passed**: Call `skill({ name: "context-discovery" })`.
+3. **Store `KB_ROOT`** for all file paths below.
+
+**If discovery fails**: Stop and report error.
+
+---
+
+## Quick Reference
+
+| Task | Path |
+|------|------|
+| Today's log | `{KB_ROOT}/work/operations/daily-log/YYYY-MM-DD/daily-log.md` |
+| Overflow file | `{KB_ROOT}/work/inbox/overflow-YYYY-MM-DD.md` |
+| Chronicle | `{KB_ROOT}/work/chronicle.md` |
+| People files | `{KB_ROOT}/work/people/{person}.md` |
+| Project files | `{KB_ROOT}/work/projects/{project}.md` |
+
+---
+
+## Protocol
+
+### Step 1: Audit
+
+1. **Read Daily Log**: `{KB_ROOT}/work/operations/daily-log/YYYY-MM-DD/daily-log.md`
+2. **Verify Progress**: Compare Top 3 Priorities against Action Log
+3. **Identify incomplete items** (not mentioned or marked incomplete)
+
+### Step 2: Summarize
+
+Fill in `## Evening Summary` section of daily-log.md:
+
+| Field | Content |
+|-------|---------|
+| Completed | Count + list |
+| Blocked | Items with blockers |
+| Deferred | Moved to tomorrow |
+| Key Wins | 2-3 most impactful |
+| Key Decisions | Strategic choices made |
+| Observations | Learnings, patterns |
+
+### Step 3: Extract Overflow
+
+Create overflow file using template: `evening-close-template.md`
+
+**Output path**: `{KB_ROOT}/work/inbox/overflow-YYYY-MM-DD.md`
+
+Collect all P0/P1 items NOT completed from:
+- Top 3 Priorities
+- Pending Responses
+- Action items from meetings
+
+### Step 4: Knowledge Persistence
+
+**Smart Merge** (append-only, never overwrite):
+
+| Source | Destination | Section |
+|--------|-------------|---------|
+| People notes | `work/people/{person}.md` | `## Interaction Log` |
+| Project decisions | `work/projects/{project}.md` | `## Decisions` |
+| Day summary | `work/chronicle.md` | `## YYYY-MM-DD` |
+
+Format: `> YYYY-MM-DD: [content]`
+
+### Step 5: Weekly Maintenance (Friday Only)
+
+If Friday:
+- Run system hygiene checks
+- Review week's chronicle entries
+- Identify patterns or recurring blockers
+- Suggest focus areas for next week
+
+### Step 6: Finalize
+
+1. Verify all file writes succeeded
+2. Present summary + overflow list to user
+3. Suggest preparation for tomorrow
+
+---
+
+## Common Mistakes
+
+| Mistake | Prevention |
+|---------|------------|
+| Overwriting existing content | Use append-only Smart Merge |
+| Hallucinating outcomes | Mark unclear items as "UNCLEAR", ask user |
+| Missing incomplete tasks | Cross-check ALL priority lists |
+
+---
+
+## Red Flags - STOP
+
+- About to overwrite existing section content
+- Item status is unclear (ask user first)
+- Daily log doesn't exist (run morning-boot first)
+
+---
+
+## Verification Checklist
+
+- [ ] Daily log updated with Evening Summary
+- [ ] Overflow file created with all incomplete P0/P1
+- [ ] Chronicle entry added
+- [ ] People/project files updated if notes exist
+- [ ] User presented with summary

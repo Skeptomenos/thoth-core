@@ -1,3 +1,8 @@
+---
+created: 2026-01-10
+updated: 2026-01-10
+---
+
 # Frontmatter Enforcer Hook
 
 ## Problem
@@ -18,6 +23,72 @@ updated: YYYY-MM-DD  # Updated on every write/edit
 ```
 
 All other fields (`type`, `hemisphere`, `tags`, `summary`, type-specific fields) remain agent responsibility.
+
+---
+
+## Skill Frontmatter Schema
+
+Skills use extended frontmatter defined in their SKILL.md files. These fields are NOT enforced by the hook but are documented here for reference.
+
+See `docs/concepts/skill-architecture.md` for the full architectural context.
+
+### Required Fields
+
+```yaml
+---
+name: skill-name                    # Skill identifier (must match folder name)
+description: What this skill does   # One-line description for discovery
+created: YYYY-MM-DD                 # Creation date (hook-enforced)
+updated: YYYY-MM-DD                 # Last update date (hook-enforced)
+---
+```
+
+### Optional Fields
+
+```yaml
+---
+triggers:                           # Trigger phrases for skill activation
+  - "trigger phrase one"
+  - "trigger phrase two"
+template: skill-name-template.md    # Output template file in skill folder
+config:                             # Config files to load before execution
+  - path: work/operations/slack-map.md
+    as: slack_config
+---
+```
+
+### Field Descriptions
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `name` | string | Skill identifier, must match folder name |
+| `description` | string | One-line description for skill discovery |
+| `triggers` | string[] | Phrases that activate this skill |
+| `template` | string | Filename of output template in skill folder |
+| `config` | object[] | Config files to load; `path` = relative to KB, `as` = variable name |
+| `created` | date | Creation date (hook-enforced) |
+| `updated` | date | Last modification date (hook-enforced) |
+
+### Example: Complete Skill Frontmatter
+
+```yaml
+---
+name: slack-pulse
+description: Scan Slack for mentions, DMs, and high-value channel activity.
+triggers:
+  - "check slack"
+  - "slack mentions"
+  - "what's happening on slack"
+template: slack-pulse-template.md
+config:
+  - path: work/operations/slack-map.md
+    as: slack_config
+created: 2026-01-09
+updated: 2026-01-10
+---
+```
+
+---
 
 ## Implementation
 
@@ -202,3 +273,8 @@ Integration tests (with temp files):
 - Edit hook updates file on disk
 - KB boundary check works
 - Existing `created` dates preserved
+
+## Related Documents
+
+- `docs/concepts/skill-architecture.md` — Skill architecture pattern
+- `kernel/config/frontmatter-schemas.yaml` — Complete frontmatter schema

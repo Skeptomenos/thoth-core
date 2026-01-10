@@ -1,16 +1,15 @@
 ---
 name: thought-router
-version: 1.0.0
-description: The thought(s) to capture
+description: Route unstructured thoughts, brain dumps, and quick captures to their correct home in the knowledge base.
 triggers: 
-inputs: 
-- name: content
-type: markdown
-required: true
-output: 
+- "dump: 
 created: 2026-01-09
-updated: 2026-01-09
+updated: 2026-01-10
 ---
+
+<!--
+ARCHITECTURE REFERENCE: docs/concepts/skill-architecture.md
+-->
 
 # Thought Router Skill
 

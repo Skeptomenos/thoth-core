@@ -2,9 +2,9 @@
 type: knowledge
 hemisphere: kernel
 created: 2026-01-06
-updated: 2026-01-06
+updated: 2026-01-10
 tags: [testing, verification, hooks, onboarding]
-summary: "Step-by-step guide to verify Thoth's enforcement mechanisms work correctly"
+summary: Step-by-step guide to verify Thoth's enforcement mechanisms work correctly
 ---
 
 # Thoth Verification Guide
@@ -121,31 +121,31 @@ The context aperture should:
 
 ---
 
-## Test 4: Temporal Awareness
+## Test 4: Time Awareness
 
 ### What It Tests
 
-The temporal awareness hook should inject time context into sessions.
+Thoth should be aware of the current date (provided by OpenCode's `<env>` block) and use it for context.
 
 ### Test Cases
 
 | Test | Action | Expected Result |
 |------|--------|-----------------|
-| **Time awareness** | "What day is it?" | Should know current date/time |
-| **Mode awareness** | "What mode should I be in?" | Should identify day mode (Launch/Execution/Closure/Sanctuary) |
-| **Biological mode** | "Is this a good time for deep work?" | Should consider time of day |
+| **Date awareness** | "What day is it?" | Should know current date |
+| **Project context** | "How long until the Q1 deadline?" | Should calculate from current date |
+| **Recency** | "When did I last update X?" | Should distinguish recent vs stale |
 
 ### How to Verify
 
-1. Ask Thoth about the current time/date
-2. Ask about operational mode
-3. Verify responses match actual time
+1. Ask Thoth about the current date
+2. Ask about project timelines
+3. Verify responses reflect correct date context
 
 ### Success Criteria
 
-- Thoth knows current date and time
-- Thoth identifies correct day mode
-- Thoth considers biological rhythms
+- Thoth knows current date
+- Thoth uses date for deadline/timeline reasoning
+- Thoth considers recency in knowledge retrieval
 
 ---
 

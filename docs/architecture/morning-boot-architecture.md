@@ -7,7 +7,7 @@ updated: 2026-01-09
 
 > **Purpose**: Complete technical documentation of the morning boot workflow for refinement and debugging.
 > **Last Updated**: 2026-01-09
-> **Status**: Working (v1) — needs optimization
+> **Status**: Working (v1.1) — tool names fixed, OpenProse executable
 
 ---
 
@@ -154,7 +154,7 @@ If there are errors accessing Gmail, report the error clearly.
 
 | Order | Tool | Parameters | Purpose |
 |-------|------|------------|---------|
-| 1 | `google-workspace_search_gmail_messages` | `user_google_email`, `query: "newer_than:1d"`, `page_size: 30` | Get list of recent emails |
+| 1 | `google-workspace_search_gmail_messages` | `user_google_email`, `query: "newer_than:1d"`, `page_size: 30` | Get list of recent emails (page_size, NOT max_results) |
 | 2+ | `google-workspace_get_gmail_message_content` (optional) | `message_id` | Read full content if needed |
 
 ### Output Format
@@ -268,7 +268,7 @@ If there are errors accessing Calendar, report the error clearly.
 
 | Order | Tool | Parameters | Purpose |
 |-------|------|------------|---------|
-| 1 | `google-workspace_get_events` | `user_google_email`, `time_min`, `time_max`, `detailed: true` | Get today's calendar |
+| 1 | `google-workspace_get_events` | `user_google_email`, `time_min` (RFC3339), `time_max` (RFC3339), `detailed: true` | Get today's calendar (NOT list_calendar_events) |
 
 ### Output Format
 
@@ -535,8 +535,10 @@ Parallel execution: **46 seconds** (2.3x faster)
 
 | Issue | Status | Notes |
 |-------|--------|-------|
-| OpenProse not executable | Won't Fix (for now) | Manual execution works |
+| OpenProse not executable | **Fixed** | OpenProse skill IS installed at `~/.config/opencode/skill/open-prose/` — use `/prose-run` |
 | Files not saved to daily-log | Not Implemented | Need to add post-workflow step |
+| ~~Tool name mismatch in .prose~~ | **Fixed 2026-01-09** | Changed `list_calendar_events` → `get_events` |
+| ~~Email param mismatch~~ | **Fixed 2026-01-09** | Changed `max_results` → `page_size` |
 
 ### Medium
 

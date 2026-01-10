@@ -1,78 +1,119 @@
 ---
 name: post-meeting-drill
 description: Deep processing of meeting notes with context hydration, entity resolution, thought-routing, urgency assessment, and knowledge persistence.
-triggers:
-  - process meeting notes
-  - meeting follow-up
-  - extract action items from meeting
-  - drill meeting
-  - post meeting
+triggers: 
+template: post-meeting-drill-template.md
+created: 2026-01-07
+updated: 2026-01-10
 ---
+
+<!--
+ARCHITECTURE REFERENCE: docs/concepts/skill-architecture.md
+This skill can be invoked standalone OR as a subagent context template.
+-->
 
 # Post-Meeting Drill Skill
 
-You are the **Knowledge Integrity Specialist**. Your mission is to translate human interactions into the permanent "Ground Truth" of Zeus's Thoth knowledge base.
+**Core principle:** Translate human interactions into persistent knowledge with full context hydration before extraction.
 
-This skill performs **deep comprehension** — not surface-level extraction. You understand context before extracting, resolve entities to files, route knowledge to appropriate locations, and alert Zeus to urgent changes.
+This skill performs **deep comprehension** — not surface-level extraction. You understand context before extracting, resolve entities to files, route knowledge to appropriate locations, and alert the user to urgent changes.
+
+---
+
+## Context Requirements (EXECUTE FIRST)
+
+**Step 0 — Get Identity:**
+
+1. **Check if passed in context**: If `context.identity.kb_root` and `context.identity.email` exist, use them.
+2. **If not passed**: Call `skill({ name: "context-discovery" })`.
+3. **Store `KB_ROOT`** and `USER_EMAIL` for use below.
+
+**If discovery fails**: Stop and report error.
+
+---
+
+## Quick Reference
+
+| Path | Purpose |
+|------|---------|
+| `{KB_ROOT}/kernel/paths.json` | Entity resolution paths |
+| `{KB_ROOT}/work/projects/{project}.md` | Project context |
+| `{KB_ROOT}/work/Team/{person}.md` | Team member files |
+| `{KB_ROOT}/work/Stakeholders/{person}.md` | External contacts |
+| `{KB_ROOT}/work/operations/daily-log/YYYY-MM-DD/daily-log.md` | Today's log |
 
 ---
 
 ## Invocation
 
-### Via Mail-Triage (Automatic)
-When mail-triage detects meeting notes, Thoth/Work Master orchestrates invocation:
+### Path 1: Via Mail-Triage (Automatic)
+
+When mail-triage detects meeting notes, it auto-invokes this skill:
 ```
-mail-triage → detects MEETING_NOTES → outputs message_id
-Thoth/Work Master → invokes post-meeting-drill for each note (sequential)
+mail-triage → detects MEETING_NOTES → extracts doc_id from email → auto-invokes post-meeting-drill
+post-meeting-drill receives: context.doc_id, context.title, context.date
+→ Skip Phase 0 email reading, go directly to Phase 0.3 (parse doc)
 ```
 
-### Manual Trigger
-Zeus can manually trigger a meeting notes scan:
+### Path 2: Direct with Doc ID
+
+Zeus provides a specific Google Doc ID:
+```
+"Process this meeting: [doc_id or doc_url]"
+→ Extract doc_id from input
+→ Skip Phase 0 email reading, go directly to Phase 0.3
+```
+
+### Path 3: Manual Scan (No Doc ID)
+
+Zeus asks to scan for meeting notes without providing doc_id:
 ```
 "Scan for meeting notes" or "Process meeting notes"
-→ Query: from:gemini-notes@google.com newer_than:[timeframe]
-→ Process each note sequentially
+→ First invoke mail-triage with context.caller = "post-meeting-drill"
+→ mail-triage scans inbox, returns list of { doc_id, title, date }
+→ Process each doc_id sequentially
 ```
+
+This bidirectional design avoids redundant email reads.
 
 ---
 
 ## Phase 0: Input Acquisition
 
-### Step 0.1: Identify Source
-| Source | Detection | Access Method |
-|--------|-----------|---------------|
-| Gemini notes | `from:gemini-notes@google.com` | `google-workspace_get_gmail_message_content(message_id)` |
-| Google Doc | Shared doc link in email | `drive-synapsis_read_google_drive_file(file_id)` |
-| Manual paste | Content provided directly | Use provided content |
+### Step 0.1: Check Input Path
 
-### Step 0.2: CRITICAL — Fetch Full Transcript (Not Just Email Summary)
+| Input Received | Action |
+|----------------|--------|
+| `context.doc_id` passed (from mail-triage) | **Skip to Step 0.3** — doc_id already extracted |
+| Doc ID/URL provided by Zeus | **Skip to Step 0.3** — extract doc_id from input |
+| No doc_id (manual scan request) | **Invoke mail-triage first** with `context.caller = "post-meeting-drill"`, then process returned doc_ids |
+| Manual paste (content provided) | Use provided content directly, skip to Phase 1 |
 
-**⚠️ The Gemini email only contains a summary. The FULL TRANSCRIPT is in a linked Google Doc.**
+### Step 0.2: Invoke Mail-Triage (Only if no doc_id)
 
+When invoked manually without a doc_id:
 ```
-Gemini Meeting Notes Structure:
-├── Email (gemini-notes@google.com)
-│   └── Summary only (high-level, often missing details)
-│
-└── Google Doc (linked in email as "Notes by Gemini")
-    ├── Tab 1: Notes (Summary + Details + Suggested next steps)
-    └── Tab 2: Transcript (FULL VERBATIM TRANSCRIPT) ← THIS IS THE SOURCE OF TRUTH
-```
-
-**Mandatory Acquisition Flow:**
-```
-1. Read email to get meeting title and date
-2. Search for linked Google Doc:
-   drive-synapsis_search_google_drive_advanced(
-     query="[Meeting Title] Notes by Gemini",
-     modified_after="[meeting date]"
-   )
-3. Read the FULL Google Doc (includes transcript tab):
-   drive-synapsis_read_google_drive_file(file_id)
-4. Process the FULL content (summary + details + transcript)
+skill({ 
+  name: "mail-triage",
+  context: { caller: "post-meeting-drill" }
+})
+→ Returns: list of { doc_id, title, date } for each meeting note found
+→ Process each doc_id via Step 0.3
 ```
 
-**Why This Matters:**
+### Step 0.3: Read Google Doc (Primary Path)
+
+```
+drive-synapsis_read_google_drive_file(file_id={DOC_ID})
+```
+
+**Gemini Doc Structure:**
+```
+├── Tab 1: Notes (Summary + Details + Suggested next steps)
+└── Tab 2: Transcript (FULL VERBATIM TRANSCRIPT) ← SOURCE OF TRUTH
+```
+
+**Why the full doc matters:**
 - Email summary misses 80%+ of meeting content
 - Transcript contains exact quotes, context, nuance
 - Details section has structured breakdowns the summary lacks
@@ -158,7 +199,7 @@ Resolve ambiguous references using loaded context:
 
 | Raw Text | Resolution Method |
 |----------|-------------------|
-| "Someone in BER - P89-L4-..." | Likely Zeus (David) — Berlin office |
+| "Someone in [Location]..." | **LOW CONFIDENCE** — Could be anyone in that meeting room. Cross-reference with content/context to narrow down. If unclear, flag as UNKNOWN. |
 | First name only (e.g., "Tom") | Match to attendees from loaded files |
 | Role reference (e.g., "the DRI") | Match to project stakeholder list |
 | Unclear pronoun | Flag as UNKNOWN |
@@ -169,7 +210,7 @@ Resolve ambiguous references using loaded context:
 | Field | Description | Example |
 |-------|-------------|---------|
 | Decision | What was agreed? | "Child tickets will be created for operations" |
-| Stakeholders | Who agreed? | Tom Jansson, David |
+| Stakeholders | Who agreed? | Tom, Zeus |
 | Rationale | Why? | "Needed for Jan launch" |
 | Date | Meeting date | 2026-01-07 |
 
@@ -177,7 +218,7 @@ Resolve ambiguous references using loaded context:
 | Field | Description | Example |
 |-------|-------------|---------|
 | Task | What needs to be done? | "Contact regional leads for child ticket content" |
-| DRI | Owner (resolved name) | David Helmus |
+| DRI | Owner (resolved name) | Zeus |
 | Deadline | By when? | "End of week" |
 | Priority | P0/P1/P2 | P0 (launch dependency) |
 | Context | Why needed? | "Dependency for golden ticket launch" |
@@ -194,7 +235,7 @@ Resolve ambiguous references using loaded context:
 |-------|-------------|---------|
 | Fact | New information | "Launch target is end of January" |
 | About | Entity (project/person) | Golden Ticket |
-| Source | Who stated? | Tom Jansson |
+| Source | Who stated? | Tom |
 
 #### SENTIMENT
 | Field | Description | Example |
@@ -390,7 +431,7 @@ Thanks for the productive discussion today. Here's a summary of what we aligned 
 [1-sentence outlook on what happens next]
 
 Best,
-David
+[Your Name]
 ```
 
 ---
@@ -410,55 +451,9 @@ David
 
 ---
 
-## Example Execution
+## Examples
 
-```
-Input: message_id 19b983283b714112
-
-Phase 0: Acquire
-- Fetch email content (summary only)
-- Meeting: "Golden Ticket: ITH Alignment" — Jan 7, 2026
-- ⚠️ Email has summary but NOT full transcript
-- Search Drive: "Golden Ticket ITH Alignment Notes by Gemini"
-- Fetch full Google Doc → Contains:
-  - Summary (what email had)
-  - Details section (structured breakdown with timestamps)
-  - Full Transcript (verbatim conversation) ← PRIMARY SOURCE
-- Now have complete meeting content
-
-Phase 1: Hydrate
-- Project: Golden Ticket → read work/projects/golden-ticket.md
-- Attendees: Tom Jansson, David, Christine
-- Resolve: tom-jansson.md found in Stakeholders
-- Load daily-log
-
-Phase 2: Extract (from FULL transcript, not just summary)
-- Decision: Child tickets needed for operations
-- Action (David): Contact regional leads — P0
-- Risk: Training gap before Feb 1 launch
-- Unknown: "dual con" workstream
-- Additional context from transcript:
-  - Exact quotes and rationale
-  - Nuanced discussion points
-  - Items missed in auto-summary
-
-Phase 3: Route
-- Decision → golden-ticket.md ## Strategic Decisions
-- Action → daily-log.md ### P0
-- Risk → golden-ticket.md ## Blockers & Risks
-- Unknown → Report only
-
-Phase 4: Urgency
-- Signal: "Training needed before Feb 1 launch" = Timeline risk
-- Amplifier: Golden Ticket is P0, launch <4 weeks away
-- Result: 🔴 HIGH
-
-Phase 5: Synthesize
-- Output urgent alert + standard synthesis
-
-Phase 6: Complete
-- Single note, no batch aggregation needed
-```
+See `examples.md` for detailed execution walkthroughs.
 
 ---
 

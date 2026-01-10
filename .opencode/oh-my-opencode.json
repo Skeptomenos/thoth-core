@@ -1,0 +1,60 @@
+{
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/dist/oh-my-opencode.schema.json",
+  
+  "sisyphus_agent": {
+    "disabled": true,
+    "default_builder_enabled": false,
+    "planner_enabled": false
+  },
+  
+  "disabled_hooks": [
+    "todo-continuation-enforcer",
+    "session-recovery",
+    "context-window-monitor",
+    "session-notification",
+    "comment-checker",
+    "tool-output-truncator",
+    "directory-agents-injector",
+    "directory-readme-injector",
+    "empty-task-response-detector",
+    "think-mode",
+    "anthropic-context-window-limit-recovery",
+    "rules-injector",
+    "background-notification",
+    "auto-update-checker",
+    "startup-toast",
+    "keyword-detector",
+    "agent-usage-reminder",
+    "non-interactive-env",
+    "interactive-bash-session",
+    "empty-message-sanitizer",
+    "thinking-block-validator",
+    "ralph-loop",
+    "preemptive-compaction",
+    "compaction-context-injector",
+    "auto-slash-command",
+    "edit-error-recovery"
+  ],
+  
+  "disabled_agents": [
+    "Sisyphus",
+    "frontend-ui-ux-engineer",
+    "document-writer",
+    "multimodal-looker"
+  ],
+  
+  "agents": {
+    "oracle": {
+      "model": "google-vertex-anthropic/claude-opus-4-5@20251101",
+      "temperature": 0.2
+    },
+    "librarian": {
+      "model": "google-vertex/gemini-3-flash-preview",
+      "temperature": 0.1
+    },
+    "explore": {
+      "model": "google-vertex/gemini-3-flash-preview",
+      "temperature": 0.0
+    }
+  }
+}

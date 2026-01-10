@@ -1,0 +1,98 @@
+# Morning Boot Workflow
+# 
+# This OpenProse program orchestrates the daily morning routine.
+# It spawns scanner agents in parallel that invoke their respective skills,
+# then synthesizes results into a daily briefing.
+#
+# Architecture:
+#   morning-boot.prose (this file)
+#   ├── email_scanner agent    → invokes skill: mail-triage
+#   ├── calendar_scanner agent → invokes skill: cal-grid
+#   └── slack_scanner agent    → invokes skill: slack-pulse
+#       ↓
+#   synthesizer agent          → combines all results
+#
+# Each skill is self-contained with its own context discovery.
+#
+# Trigger: "start my day", "morning routine", "morning boot"
+# Invoked via: skill({ name: "morning-boot" })
+
+# =============================================================================
+# AGENT DEFINITIONS
+# =============================================================================
+
+agent email_scanner:
+  model: sonnet
+  prompt: |
+    You are the Email Scanner agent for the Morning Boot workflow.
+    
+    **Your Mission**: Invoke the mail-triage skill and return its results.
+    
+    **Execution**:
+    1. Call: `skill({ name: "mail-triage" })`
+    2. Wait for the skill to complete
+    3. Return the skill's output (the mail triage report)
+    
+    The mail-triage skill handles:
+    - Context discovery (email address)
+    - Gmail API calls
+    - Classification of emails
+    - Output to `work/operations/daily-log/YYYY-MM-DD/mail-triage.md`
+    
+    **Return**: The complete mail triage report from the skill.
+
+agent calendar_scanner:
+  model: sonnet
+  prompt: |
+    You are the Calendar Scanner agent for the Morning Boot workflow.
+    
+    **Your Mission**: Invoke the cal-grid skill and return its results.
+    
+    **Execution**:
+    1. Call: `skill({ name: "cal-grid" })`
+    2. Wait for the skill to complete
+    3. Return the skill's output (the calendar grid)
+    
+    The cal-grid skill handles:
+    - Context discovery (email address)
+    - Google Calendar API calls
+    - Meeting analysis and focus block identification
+    - Output to `work/operations/daily-log/YYYY-MM-DD/cal-grid.md`
+    
+    **Return**: The complete calendar grid from the skill.
+
+agent slack_scanner:
+  model: sonnet
+  prompt: |
+    You are the Slack Scanner agent for the Morning Boot workflow.
+    
+    **Your Mission**: Invoke the slack-pulse skill and return its results.
+    
+    **Execution**:
+    1. Call: `skill({ name: "slack-pulse" })`
+    2. Wait for the skill to complete
+    3. Return the skill's output (the slack pulse report)
+    
+    The slack-pulse skill handles:
+    - Context discovery (email + kb_root)
+    - Loading slack-map.md for channel configuration
+    - Slack API calls for channels and DMs
+    - Output to `work/operations/daily-log/YYYY-MM-DD/slack-pulse.md`
+    
+    **Return**: The complete slack pulse report from the skill.
+
+# =============================================================================
+# EXECUTION FLOW
+# =============================================================================
+
+# Step 1: Parallel Skill Invocations
+# Each scanner agent invokes its respective skill
+# Skills handle their own context discovery, config loading, and templating
+parallel:
+  email = session: email_scanner
+  calendar = session: calendar_scanner
+  slack = session: slack_scanner
+
+# Step 2: Return Results to SKILL.md
+# No synthesis here — SKILL.md handles synthesis with full session context
+# This keeps the main session's context clean while subagents do heavy lifting

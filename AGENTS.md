@@ -3,7 +3,7 @@ hemisphere: null
 depth: 1
 boot_sequence: []
 created: 2026-01-09
-updated: 2026-01-09
+updated: 2026-01-10
 ---
 
 # Thoth Core — Plugin Development
@@ -164,9 +164,22 @@ These documents explain WHY things work the way they do:
 3. Test agent in workspace
 
 ### Updating a skill
-1. Edit files in `defaults/skill/<skill-name>/`
-2. Run `bun run build` (copies to dist)
-3. Test skill end-to-end
+1. Edit files in `defaults/skill/<skill-name>/` (this is the source of truth)
+2. Changes are instantly visible in `thoth-kb/.opencode/skill/` via symlinks
+3. Test skill in thoth-kb
+4. Run `bun run build` (bundles for npm)
+
+> **Note**: thoth-kb uses symlinks to thoth-core for skills. See `docs/concepts/skill-architecture.md` for the symlink workflow.
+
+### Creating a new skill
+1. Follow pattern in `docs/guides/skill-authoring-guide.md`
+2. Create folder in `defaults/skill/<skill-name>/`
+3. Create `SKILL.md` with frontmatter (name, description, triggers, template)
+4. **If skill needs user context** (email, KB location, stakeholders): Follow the **Context Discovery Pattern** in `docs/concepts/skill-architecture.md`
+5. Run `bun run build`
+6. Test skill end-to-end
+
+> **IMPORTANT**: Never hardcode emails or duplicate discovery logic. Skills that need context MUST call `skill({ name: "context-discovery" })`. See `docs/concepts/skill-architecture.md` for the mandatory pattern.
 
 ---
 

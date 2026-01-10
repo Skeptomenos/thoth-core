@@ -149,33 +149,3 @@ export interface TemporalContext {
   biologicalMode: BiologicalMode;
   isWeekend: boolean;
 }
-
-export function formatTemporalContext(ctx: TemporalContext): string {
-  return `<temporal_context>
-  Date: ${ctx.date} (${ctx.dayOfWeek})
-  Time: ${ctx.time}
-  Week: ${ctx.weekNumber} of 52
-  Quarter: Q${ctx.quarter}
-  Day Mode: ${formatDayMode(ctx.dayMode)}
-  Biological Mode: ${formatBiologicalMode(ctx.biologicalMode)}
-  ${ctx.isWeekend ? "⚠️ Weekend Sanctuary - Block work unless Emergency P0" : ""}
-</temporal_context>`;
-}
-
-function formatDayMode(mode: DayMode): string {
-  switch (mode) {
-    case "launch": return "Monday Launch Mode - Prioritize planning and alignment";
-    case "execution": return "Execution Mode - Protect deep work blocks";
-    case "closure": return "Friday Closure Mode - Wrap up and delegate";
-    case "weekend-sanctuary": return "Weekend Sanctuary - Restoration priority";
-  }
-}
-
-function formatBiologicalMode(mode: BiologicalMode): string {
-  switch (mode) {
-    case "high-cognitive": return "High Cognitive (08:00-11:00) - Protect from triage";
-    case "collaborative": return "Collaborative (14:00-17:00) - Good for meetings";
-    case "restoration": return "Restoration (19:00+) - Block work notifications";
-    case "transition": return "Transition - Flexible period";
-  }
-}

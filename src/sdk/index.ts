@@ -10,7 +10,6 @@ export {
 
 export {
   SentinelService,
-  createMorningBootWorkflow,
   createDeepResearchWorkflow,
   type SentinelConfig,
   type WorkflowDefinition,

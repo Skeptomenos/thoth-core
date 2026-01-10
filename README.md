@@ -151,8 +151,10 @@ Thoth includes built-in skills that trigger automatically based on your intent:
 | "start my day", "morning routine", "prepare me for the day" | morning-boot |
 | "end of day", "wrap up", "evening summary" | evening-close |
 | "check my email", "email triage" | mail-triage |
+| "process meeting notes", "drill meeting" | post-meeting-drill |
 | "check slack", "slack mentions" | slack-pulse |
 | "brain dump", "capture this" | thought-router |
+| "draft an email", "write email to" | email-draft |
 
 ### Managing Skills
 
@@ -201,7 +203,16 @@ Use the `skill-generator` skill:
 /skill-generator
 ```
 
-Skills are defined in `.opencode/skill/` with YAML frontmatter:
+Skills follow a modular architecture with three components:
+
+```
+skill-name/
+├── SKILL.md              # Workflow logic (required)
+├── skill-name-template.md   # Output template (optional)
+└── skill-name.prose      # OpenProse orchestration (optional)
+```
+
+Skills are defined with YAML frontmatter:
 
 ```yaml
 ---
@@ -210,6 +221,9 @@ description: Use when [specific triggers]. Third person.
 triggers:
   - phrase that activates this skill
   - another trigger phrase
+template: my-skill-template.md    # Optional output template
+created: 2026-01-01
+updated: 2026-01-01
 ---
 
 # My Skill
@@ -230,6 +244,8 @@ triggers:
 ```
 
 The `triggers` field enables automatic skill invocation when the user's message matches.
+
+See `docs/concepts/skill-architecture.md` for the full architecture specification.
 
 ## Sub-Agents
 

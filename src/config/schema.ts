@@ -12,7 +12,6 @@ const HooksConfigSchema = z.object({
   "permission-enforcer": z.boolean().optional(),
   "trust-level-tracker": z.boolean().optional(),
   "context-aperture": z.boolean().optional(),
-  "temporal-awareness": z.boolean().optional(),
   "knowledge-persistence": z.boolean().optional(),
   "directory-agents-injector": z.boolean().optional(),
   "frontmatter-enforcer": z.boolean().optional(),

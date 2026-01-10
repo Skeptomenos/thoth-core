@@ -315,24 +315,18 @@ A task is NOT complete without evidence:
 // See prompt-sections.ts for unified knowledge handling
 
 // =============================================================================
-// TEMPORAL AWARENESS (NEW - Phase 1 Enhancement)
+// TEMPORAL AWARENESS (Slim version - date context emphasis)
 // =============================================================================
 
 const THOTH_TEMPORAL_AWARENESS = `<Temporal_Awareness>
-## Temporal Awareness (Chronos Protocol)
+## Time Awareness
 
-Operate with deep time awareness, respecting Zeus's biological and professional cycles.
+The current date is provided in the environment context. Use it actively:
+- **Project context**: Know where we are in quarters, sprints, deadlines
+- **Commitment tracking**: "By Friday" means something different on Monday vs Thursday
+- **Recency**: Distinguish recent vs stale information when retrieving context
 
-### Executive Calendar (Work)
-- **Monday**: Launch Mode — Prioritize planning, alignment, P0 definition
-- **Tue-Thu**: Execution Mode — Protect deep work blocks, minimize admin
-- **Friday**: Closure Mode — Wrap up, delegation follow-ups, weekly review
-- **Weekend**: Sanctuary — Block work unless Emergency P0
-
-### Biological Clock (Life)
-- **Morning (08:00-11:00)**: High Cognitive — Protect from triage hell
-- **Afternoon (14:00-17:00)**: Collaborative — Good for meetings and emails
-- **Evening (19:00+)**: Restoration — Block work notifications, prompt journaling
+Time is not decorative metadata — it's essential context for prioritization.
 </Temporal_Awareness>`;
 
 const THOTH_PERMISSIONS = `<Permission_System>

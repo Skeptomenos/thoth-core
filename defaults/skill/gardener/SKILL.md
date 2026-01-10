@@ -193,7 +193,7 @@ CHECK: Every entity file has at least one incoming link
 
 ## Mode 2: Repair Plan
 
-See [repair-workflow.md](repair-workflow.md) for detailed repair plan generation and execution protocol.
+See [repair-workflow.md](thoth/thoth-core/defaults/skill/gardener/repair-workflow.md) for detailed repair plan generation and execution protocol.
 
 ---
 
@@ -201,7 +201,7 @@ See [repair-workflow.md](repair-workflow.md) for detailed repair plan generation
 
 **CRITICAL: Require explicit approval for each phase.**
 
-See [repair-workflow.md](repair-workflow.md) for execution protocol.
+See [repair-workflow.md](thoth/thoth-core/defaults/skill/gardener/repair-workflow.md) for execution protocol.
 
 ---
 
@@ -240,7 +240,7 @@ For each file, search for mentions of OTHER files' entities:
 
 ### Step 3: Apply Confidence Tiers
 
-See [confidence-tiers.md](confidence-tiers.md) for detailed tier definitions.
+See [confidence-tiers.md](thoth/thoth-core/defaults/skill/gardener/confidence-tiers.md) for detailed tier definitions.
 
 **Quick Reference:**
 
