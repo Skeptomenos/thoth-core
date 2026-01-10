@@ -1,10 +1,7 @@
 ---
 name: context-discovery
 description: Use when a skill needs Thoth KB context (identity, stakeholders, projects) and it hasn't been discovered yet this session. Called automatically by morning-boot and other context-dependent skills.
-triggers:
-  - "discover context"
-  - "find my identity"
-  - "where is my kb"
+triggers: 
 created: 2026-01-09
 updated: 2026-01-10
 ---
@@ -41,7 +38,8 @@ This skill is typically invoked by other skills, not directly by user.
 | Find KB root | Check config → walk up for markers → check siblings |
 | Determine hemisphere | Parse CWD path for `/work/`, `/life/`, `/coding/` |
 | Find email | Read `{hemisphere}/AGENTS.md`, extract from MCP config table |
-| Find stakeholders | Check `{hemisphere}/Stakeholders/_index.md` or `{hemisphere}/people/_index.md` |
+| Find stakeholders | Check `{hemisphere}/Stakeholders/_index.md` — peers, bosses, external contacts |
+| Find team | Check `{hemisphere}/Team/_index.md` — direct reports |
 | Cache results | Store in `.thoth-state/context.json` for session reuse |
 
 ---
@@ -115,12 +113,16 @@ Extract `user_google_email` value.
 3. `{hemisphere}/_identity.md`
 4. `kernel/config/identity.md`
 
-### Step 6: Locate Stakeholders
+### Step 6: Locate People
 
-Check in order (use first that exists):
-1. `{kb_root}/{hemisphere}/Stakeholders/_index.md`
-2. `{kb_root}/{hemisphere}/people/_index.md`
-3. `{kb_root}/{hemisphere}/Team/_index.md` (for direct reports)
+Discover BOTH categories (they serve different purposes):
+
+**Stakeholders** (peers, bosses, external contacts):
+- Check: `{kb_root}/{hemisphere}/Stakeholders/_index.md`
+- Fallback: `{kb_root}/{hemisphere}/people/_index.md`
+
+**Team** (direct reports):
+- Check: `{kb_root}/{hemisphere}/Team/_index.md`
 
 ### Step 7: Build Context Object
 
@@ -135,6 +137,10 @@ Check in order (use first that exists):
   "stakeholders": {
     "path": "work/Stakeholders/_index.md",
     "count": 32
+  },
+  "team": {
+    "path": "work/Team/_index.md",
+    "count": 8
   },
   "projects": {
     "path": "work/projects/_index.md"
@@ -167,9 +173,13 @@ Identity:
   Timezone: Europa/Berlin (if found)
   Source: work/AGENTS.md
 
-Stakeholders:
+Stakeholders (peers, bosses, external):
   Path: work/Stakeholders/_index.md
   Count: 32 files
+
+Team (direct reports):
+  Path: work/Team/_index.md
+  Count: 8 files
 
 Projects:
   Path: work/projects/_index.md
