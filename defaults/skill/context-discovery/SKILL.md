@@ -15,19 +15,10 @@ This skill is typically invoked by other skills, not directly by user.
 
 **Core principle:** Find the Thoth KB and extract context needed for skills to operate, adapting to the actual file structure rather than assuming an ideal one.
 
----
-
-## When to Use
-
-- Morning-boot or other skills need user context (email, stakeholders)
-- Running from unknown directory and need to find KB root
-- Context hasn't been discovered yet this session
-- User asks "where is my knowledge base"
-
-**Do NOT use when:**
-- Context is already cached in session
-- User explicitly provides context (email, etc.)
-- Running a skill that doesn't need KB context
+**Path-aware behavior:** Context discovery detects WHERE you're running from and adjusts scope accordingly:
+- **KB root** → Dual mode (both work + life)
+- **work/** → Single mode (work only)
+- **life/** → Single mode (life only)
 
 ---
 
@@ -36,7 +27,7 @@ This skill is typically invoked by other skills, not directly by user.
 | Task | How |
 |------|-----|
 | Find KB root | Check config → walk up for markers → check siblings |
-| Determine hemisphere | Parse CWD path for `/work/`, `/life/`, `/coding/` |
+| Determine mode | CWD at root = dual; CWD in hemisphere = single |
 | Find email | Read `{hemisphere}/AGENTS.md`, extract from MCP config table |
 | Find stakeholders | Check `{hemisphere}/Stakeholders/_index.md` — peers, bosses, external contacts |
 | Find team | Check `{hemisphere}/Team/_index.md` — direct reports |
@@ -77,25 +68,28 @@ ls .. | grep -E "(thoth-kb|kb)"
 
 Look for directories containing `kernel/` or `.opencode/thoth.json`.
 
-### Step 4: Determine Hemisphere
+### Step 4: Determine Mode and Hemisphere(s)
 
-Analyze CWD path:
+**Calculate relative path from KB root to CWD:**
 
-| Path Contains | Hemisphere |
-|---------------|------------|
-| `/work/` | work |
-| `/life/` | life |
-| `/coding/` | coding |
-| `/kernel/` | kernel |
-| None of above | unknown |
+```
+relative_path = CWD - kb_root
+```
 
-If hemisphere is `unknown` and KB root was found, default based on context:
-- Morning boot → default to `work`
-- Or ask user which hemisphere
+**Mode detection:**
 
-### Step 5: Extract Identity
+| CWD Location | Mode | Hemispheres |
+|--------------|------|-------------|
+| KB root itself (`relative_path` is empty or `.`) | **dual** | work + life |
+| Inside `kernel/` | **dual** | work + life |
+| Inside `work/...` | **single** | work |
+| Inside `life/...` | **single** | life |
+| Inside `coding/...` | **single** | coding |
+| Outside KB (sibling project) | **dual** | work + life |
 
-Read `{kb_root}/{hemisphere}/AGENTS.md` and find the MCP configuration table:
+### Step 5: Extract Identity (Per Hemisphere)
+
+For EACH active hemisphere, read `{kb_root}/{hemisphere}/AGENTS.md` and find the MCP configuration table:
 
 ```markdown
 ## MCP Tool Configuration
@@ -107,31 +101,33 @@ Read `{kb_root}/{hemisphere}/AGENTS.md` and find the MCP configuration table:
 
 Extract `user_google_email` value.
 
-**Fallback locations:**
+**Fallback locations (per hemisphere):**
 1. `{hemisphere}/AGENTS.md` MCP table (preferred)
 2. `{hemisphere}/digital-identity.md`
 3. `{hemisphere}/_identity.md`
-4. `kernel/config/identity.md`
 
-### Step 6: Locate People
+### Step 6: Locate People (Per Hemisphere)
 
-Discover BOTH categories (they serve different purposes):
+For EACH active hemisphere, discover:
 
 **Stakeholders** (peers, bosses, external contacts):
 - Check: `{kb_root}/{hemisphere}/Stakeholders/_index.md`
 - Fallback: `{kb_root}/{hemisphere}/people/_index.md`
 
-**Team** (direct reports):
+**Team** (direct reports) — typically work only:
 - Check: `{kb_root}/{hemisphere}/Team/_index.md`
 
 ### Step 7: Build Context Object
 
+**Single mode (one hemisphere):**
+
 ```json
 {
   "kb_root": "/path/to/thoth-kb",
+  "mode": "single",
   "hemisphere": "work",
   "identity": {
-    "email": "user@example.com",
+    "email": "user@company.com",
     "source": "work/AGENTS.md"
   },
   "stakeholders": {
@@ -150,6 +146,43 @@ Discover BOTH categories (they serve different purposes):
 }
 ```
 
+**Dual mode (both hemispheres):**
+
+```json
+{
+  "kb_root": "/path/to/thoth-kb",
+  "mode": "dual",
+  "hemisphere": null,
+  "hemispheres": {
+    "work": {
+      "email": "user@company.com",
+      "source": "work/AGENTS.md",
+      "stakeholders": {
+        "path": "work/Stakeholders/_index.md",
+        "count": 32
+      },
+      "team": {
+        "path": "work/Team/_index.md",
+        "count": 8
+      },
+      "projects": {
+        "path": "work/projects/_index.md"
+      }
+    },
+    "life": {
+      "email": "user@personal.me",
+      "source": "life/AGENTS.md",
+      "people": {
+        "path": "life/people/_index.md",
+        "count": 12
+      }
+    }
+  },
+  "ready": true,
+  "missing": []
+}
+```
+
 ### Step 8: Cache Results
 
 Write to `.thoth-state/context.json` in KB root for session reuse.
@@ -158,19 +191,20 @@ Write to `.thoth-state/context.json` in KB root for session reuse.
 
 ## Output Format
 
-Return a structured context object:
+### Single Mode Output
 
 ```
 CONTEXT DISCOVERY RESULT
 ========================
 
 KB Root: /path/to/thoth-kb
+Mode: SINGLE
 Hemisphere: work
-Source: ~/.config/opencode/thoth.json (or walk-up, or sibling)
+Source: ~/.config/opencode/thoth.json
 
 Identity:
-  Email: user@example.com
-  Timezone: Europa/Berlin (if found)
+  Email: user@company.com
+  Timezone: Europe/Amsterdam
   Source: work/AGENTS.md
 
 Stakeholders (peers, bosses, external):
@@ -185,11 +219,51 @@ Projects:
   Path: work/projects/_index.md
 
 Ready: YES
-Missing Required: (none)
-Missing Optional: [timezone]
 ```
 
-If discovery fails:
+### Dual Mode Output
+
+```
+CONTEXT DISCOVERY RESULT
+========================
+
+KB Root: /path/to/thoth-kb
+Mode: DUAL
+Hemispheres: work, life
+Source: ~/.config/opencode/thoth.json
+
+=== WORK HEMISPHERE ===
+
+Identity:
+  Email: user@company.com
+  Timezone: Europe/Amsterdam
+  Source: work/AGENTS.md
+
+Stakeholders (peers, bosses, external):
+  Path: work/Stakeholders/_index.md
+  Count: 32 files
+
+Team (direct reports):
+  Path: work/Team/_index.md
+  Count: 8 files
+
+Projects:
+  Path: work/projects/_index.md
+
+=== LIFE HEMISPHERE ===
+
+Identity:
+  Email: user@personal.me
+  Source: life/AGENTS.md
+
+People:
+  Path: life/people/_index.md
+  Count: 12 files
+
+Ready: YES
+```
+
+### Failure Output
 
 ```
 CONTEXT DISCOVERY FAILED
@@ -215,6 +289,8 @@ Action Required: Run context-onboarding to set up KB
 | Stopping at first `kernel/` found | Verify it's a real KB (has work/ or life/ too) |
 | Parsing AGENTS.md wrong | Look for MCP table specifically, not general content |
 | Not caching results | Always cache to `.thoth-state/context.json` |
+| Ignoring mode detection | Always check CWD relative to KB root |
+| Returning single when dual expected | KB root and kernel/ paths require dual mode |
 
 ---
 
@@ -222,45 +298,50 @@ Action Required: Run context-onboarding to set up KB
 
 - Hardcoding `/Users/username/...` paths
 - Assuming `_identity.md` exists (it often doesn't)
-- Not handling "hemisphere unknown" case
+- Not handling mode detection properly
 - Returning partial results without `ready: false` flag
 - Not reporting what's missing when discovery fails
+- Treating dual mode as single (losing one hemisphere's context)
 
 ---
 
 ## Verification Checklist
 
-- [ ] Can find KB when running from KB root
-- [ ] Can find KB when running from hemisphere subdirectory
-- [ ] Can find KB when running from sibling directory (e.g., thoth-core)
-- [ ] Correctly extracts email from AGENTS.md MCP table
+- [ ] Can find KB when running from KB root → returns DUAL mode
+- [ ] Can find KB when running from work/ → returns SINGLE mode (work)
+- [ ] Can find KB when running from life/ → returns SINGLE mode (life)
+- [ ] Can find KB when running from kernel/ → returns DUAL mode
+- [ ] Can find KB when running from sibling directory → returns DUAL mode
+- [ ] Correctly extracts email from BOTH hemispheres in dual mode
 - [ ] Reports missing files clearly when KB incomplete
 - [ ] Caches results for session reuse
-- [ ] Works for new user with no KB (reports failure, suggests onboarding)
 
 ---
 
 ## Integration
 
-Other skills call discovery like this:
+Other skills use context discovery like this:
 
 ```prose
 # In morning-boot.prose
 
-# Check for cached context
-let cached = session "Read .thoth-state/context.json if exists and fresh"
+let context = do context-discovery
 
-if **no cached context or stale**:
-  let context = do context-discovery
+if **context.mode == "dual"**:
+  # Scan both hemispheres
+  let work_email = context.hemispheres.work.email
+  let life_email = context.hemispheres.life.email
   
-  if **context.ready is false**:
-    do context-onboarding
-    let context = do context-discovery  # retry
+  parallel:
+    agent work_scanner: "Scan work inbox" with work_email
+    agent life_scanner: "Scan personal inbox" with life_email
     
-# Use context
-let email = context.identity.email
+else:
+  # Single hemisphere
+  let email = context.identity.email
+  agent scanner: "Scan inbox" with email
 ```
 
 ---
 
-*Context Discovery v1.0 | Part of Thoth Skill System*
+*Context Discovery v2.0 | Path-Aware Hemisphere Detection | Part of Thoth Skill System*

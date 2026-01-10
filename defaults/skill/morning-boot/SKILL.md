@@ -1,15 +1,10 @@
 ---
 name: morning-boot
-description: The master orchestrator for your morning routine. Parallelizes scans across email, calendar, and Slack, then synthesizes into a daily briefing.
-triggers:
-  - "start my day"
-  - "morning boot"
-  - "prepare my day"
-  - "daily briefing"
-  - "morning routine"
+description: The master orchestrator for your morning routine. Parallelizes scans across email, calendar, and Slack, then synthesizes into a daily briefing. Path-aware — scans both work and life when run from KB root.
+triggers: 
 template: daily-log-template.md
 created: 2026-01-09
-updated: 2026-01-09
+updated: 2026-01-10
 ---
 
 <!--
@@ -24,6 +19,7 @@ Key concepts:
 - Templates ensure consistent output quality
 - Synthesis happens in main session (not subagent) for full context access
 - Nesting enables context discovery chains
+- PATH-AWARE: Dual mode (work+life) at KB root, single mode in hemispheres
 
 DO NOT modify this skill without reading the architecture doc first.
 -->
@@ -31,6 +27,11 @@ DO NOT modify this skill without reading the architecture doc first.
 # Morning Boot Skill
 
 You are the **Daily Operations Orchestrator**. Coordinate parallel scans, synthesize results with full session context, and produce the daily briefing.
+
+**Path-aware behavior:**
+- Running from **KB root** → Scan BOTH work and life (dual mode)
+- Running from **work/** → Scan work only (single mode)
+- Running from **life/** → Scan life only (single mode)
 
 ---
 
@@ -41,14 +42,21 @@ Main Session (Thoth)
 │
 ├─▶ SKILL.md (this file)
 │   │
-│   ├── Phase 1: Context Discovery
+│   ├── Phase 1: Context Discovery (detects mode)
 │   │
-│   ├── Phase 2: Execute OpenProse VM
-│   │   └── morning-boot.prose
-│   │       └── parallel:
-│   │           ├── email_scanner → mail-triage skill → email summary
-│   │           ├── calendar_scanner → cal-grid skill → calendar summary
-│   │           └── slack_scanner → slack-pulse skill → slack summary
+│   ├── Phase 2: Execute Parallel Scans
+│   │   │
+│   │   ├── [DUAL MODE] Both hemispheres:
+│   │   │   ├── work_email_scanner → mail-triage (work email)
+│   │   │   ├── work_calendar_scanner → cal-grid (work calendar)
+│   │   │   ├── work_slack_scanner → slack-pulse
+│   │   │   ├── life_email_scanner → mail-triage (personal email)
+│   │   │   └── life_calendar_scanner → cal-grid (personal calendar)
+│   │   │
+│   │   └── [SINGLE MODE] One hemisphere:
+│   │       ├── email_scanner → mail-triage
+│   │       ├── calendar_scanner → cal-grid
+│   │       └── slack_scanner → slack-pulse (work only)
 │   │
 │   ├── Phase 3: Synthesize (YOU do this, with full context)
 │   │   └── Use daily-log-template.md
@@ -66,15 +74,33 @@ Main Session (Thoth)
 
 ## Phase 1: Context Discovery
 
-**Step 1.1 — Get Identity:**
+**Step 1.1 — Get Identity and Mode:**
 
 ```
 skill({ name: "context-discovery" })
 ```
 
-Store:
-- `EMAIL` — User's work email
-- `KB_ROOT` — Knowledge base path
+Context discovery returns:
+- `mode` — "single" or "dual"
+- `kb_root` — Knowledge base path
+- For single mode: `hemisphere`, `identity.email`
+- For dual mode: `hemispheres.work.email`, `hemispheres.life.email`
+
+**Store based on mode:**
+
+```
+If mode == "dual":
+  WORK_EMAIL = hemispheres.work.email
+  LIFE_EMAIL = hemispheres.life.email
+  WORK_STAKEHOLDERS = hemispheres.work.stakeholders
+  WORK_TEAM = hemispheres.work.team
+  LIFE_PEOPLE = hemispheres.life.people
+Else:
+  EMAIL = identity.email
+  HEMISPHERE = hemisphere
+  STAKEHOLDERS = stakeholders (if work)
+  TEAM = team (if work)
+```
 
 **If discovery fails:** Stop and report. User needs to run `thoth link`.
 
@@ -88,22 +114,48 @@ Create the directory if it doesn't exist.
 
 ---
 
-## Phase 2: Execute OpenProse Workflow
+## Phase 2: Execute Parallel Scans
 
-Load and embody the OpenProse VM. Execute `morning-boot.prose`.
+### Dual Mode (KB root — both hemispheres)
 
-The .prose file spawns three scanner agents in parallel:
-- `email_scanner` → invokes `mail-triage` skill
-- `calendar_scanner` → invokes `cal-grid` skill  
-- `slack_scanner` → invokes `slack-pulse` skill
+Spawn **5 parallel scanners**:
 
-Each skill:
-- Handles its own context discovery
-- Reads its own config files
-- Uses its own template for output format
-- Returns a structured summary
+| Agent | Skill | Email | Purpose |
+|-------|-------|-------|---------|
+| `work_email_scanner` | mail-triage | `WORK_EMAIL` | Work inbox |
+| `work_calendar_scanner` | cal-grid | `WORK_EMAIL` | Work calendar |
+| `work_slack_scanner` | slack-pulse | (workspace) | Slack activity |
+| `life_email_scanner` | mail-triage | `LIFE_EMAIL` | Personal inbox |
+| `life_calendar_scanner` | cal-grid | `LIFE_EMAIL` | Personal calendar |
 
-**Receive back:** `{ email, calendar, slack }` — summaries from all three scanners.
+**Note:** Slack is work-only. No personal Slack scan.
+
+**Receive back:**
+```json
+{
+  "work": {
+    "email": { /* mail-triage output */ },
+    "calendar": { /* cal-grid output */ },
+    "slack": { /* slack-pulse output */ }
+  },
+  "life": {
+    "email": { /* mail-triage output */ },
+    "calendar": { /* cal-grid output */ }
+  }
+}
+```
+
+### Single Mode (inside hemisphere)
+
+Spawn **3 parallel scanners** (or 2 for life):
+
+| Agent | Skill | Purpose |
+|-------|-------|---------|
+| `email_scanner` | mail-triage | Inbox scan |
+| `calendar_scanner` | cal-grid | Calendar analysis |
+| `slack_scanner` | slack-pulse | Slack activity (work only) |
+
+**Receive back:** `{ email, calendar, slack }` — summaries from scanners.
 
 ---
 
@@ -124,6 +176,8 @@ Check for spillover and commitments:
 
 **Step 3.3 — Apply synthesis logic:**
 
+### Single Mode Synthesis
+
 | Input | Analysis |
 |-------|----------|
 | Email ACTION items | → Pending responses (email) |
@@ -133,6 +187,23 @@ Check for spillover and commitments:
 | Meeting notes detected | → Handoff count for post-meeting-drill |
 | Spillover from yesterday | → Carry forward or reprioritize |
 | Dashboard priorities | → Cross-reference with today's items |
+
+### Dual Mode Synthesis
+
+| Input | Analysis |
+|-------|----------|
+| **Work email** ACTION items | → Work pending responses |
+| **Work calendar** meetings | → Work meeting load |
+| **Slack** RESPOND items | → Slack pending |
+| **Life email** ACTION items | → Personal pending (flag if urgent) |
+| **Life calendar** events | → Personal commitments (flag conflicts) |
+| Meeting notes detected | → Handoff count for post-meeting-drill |
+| Spillover from yesterday | → Carry forward or reprioritize |
+
+**Cross-hemisphere conflict detection:**
+- Work meeting overlaps with personal appointment? → FLAG
+- Personal urgent email during heavy work day? → SURFACE
+- Life event that might affect work focus? → NOTE
 
 **Step 3.4 — Determine Top Priority and Top 3:**
 
@@ -153,24 +224,49 @@ Apply Executive Filter:
 
 Replace placeholders in `daily-log-template.md` with synthesized values.
 
+For dual mode, include a **Life section** in the briefing:
+```markdown
+## Personal
+
+**Today's personal commitments:**
+- {LIFE_EVENTS}
+
+**Personal inbox:** {LIFE_EMAIL_SUMMARY}
+
+**Conflicts:** {CROSS_HEMISPHERE_CONFLICTS}
+```
+
 ---
 
 ## Phase 4: Persist Outputs
 
 Write all files to `{OUTPUT_DIR}`:
 
+### Single Mode Files
+
 | File | Content |
 |------|---------|
 | `daily-log.md` | Synthesized briefing (from Phase 3) |
-| `mail-triage.md` | Email scan results (from email scanner) |
-| `cal-grid.md` | Calendar analysis (from calendar scanner) |
-| `slack-pulse.md` | Slack activity (from slack scanner) |
+| `mail-triage.md` | Email scan results |
+| `cal-grid.md` | Calendar analysis |
+| `slack-pulse.md` | Slack activity (work only) |
+
+### Dual Mode Files
+
+| File | Content |
+|------|---------|
+| `daily-log.md` | Synthesized briefing (includes both hemispheres) |
+| `mail-triage-work.md` | Work email scan results |
+| `mail-triage-life.md` | Personal email scan results |
+| `cal-grid-work.md` | Work calendar analysis |
+| `cal-grid-life.md` | Personal calendar analysis |
+| `slack-pulse.md` | Slack activity |
 
 ---
 
 ## Phase 5: Present to User
 
-Verbal summary format:
+### Single Mode Presentation
 
 ```
 ## Morning Briefing — {DATE}
@@ -185,6 +281,41 @@ Verbal summary format:
 **Day Shape:** {COMPLEXITY} day — {MEETING_COUNT} meetings, {DEEP_WORK_HOURS}h deep work available
 
 **Pending Responses:** {EMAIL_ACTION_COUNT} emails, {SLACK_RESPOND_COUNT} Slack messages
+
+**Meeting Notes:** {MEETING_NOTES_COUNT} ready for processing
+
+Files saved to: work/operations/daily-log/{DATE}/
+```
+
+### Dual Mode Presentation
+
+```
+## Morning Briefing — {DATE}
+
+**Top Priority:** {TOP_PRIORITY}
+
+**Top 3:**
+1. {PRIORITY_1}
+2. {PRIORITY_2}
+3. {PRIORITY_3}
+
+### Work
+
+**Day Shape:** {COMPLEXITY} day — {WORK_MEETING_COUNT} meetings, {DEEP_WORK_HOURS}h deep work available
+
+**Pending Responses:** {WORK_EMAIL_ACTION_COUNT} work emails, {SLACK_RESPOND_COUNT} Slack
+
+### Personal
+
+**Today:** {LIFE_EVENTS_SUMMARY}
+
+**Pending:** {LIFE_EMAIL_ACTION_COUNT} personal emails
+
+### Conflicts
+
+{CROSS_HEMISPHERE_CONFLICTS or "None detected"}
+
+---
 
 **Meeting Notes:** {MEETING_NOTES_COUNT} ready for processing
 
@@ -226,11 +357,10 @@ If ALL scanners fail:
 
 ## Related Files
 
-- `morning-boot.prose` — OpenProse parallel execution
 - `daily-log-template.md` — Output template
 - `work/operations/slack-map.md` — Slack channel configuration
 - `work/dashboard.md` — Current priorities (for synthesis context)
 
 ---
 
-*Morning Boot Skill v3.0 | Template-driven synthesis with full context*
+*Morning Boot Skill v4.0 | Path-aware dual/single hemisphere scanning*
