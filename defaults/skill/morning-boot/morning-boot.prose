@@ -8,7 +8,8 @@
 #   morning-boot.prose (this file)
 #   ├── email_scanner agent    → invokes skill: mail-triage
 #   ├── calendar_scanner agent → invokes skill: cal-grid
-#   └── slack_scanner agent    → invokes skill: slack-pulse
+#   ├── slack_scanner agent    → invokes skill: slack-pulse
+#   └── jira_scanner agent     → invokes skill: jira-pulse
 #       ↓
 #   synthesizer agent          → combines all results
 #
@@ -81,6 +82,26 @@ agent slack_scanner:
     
     **Return**: The complete slack pulse report from the skill.
 
+agent jira_scanner:
+  model: sonnet
+  prompt: |
+    You are the Jira Scanner agent for the Morning Boot workflow.
+    
+    **Your Mission**: Invoke the jira-pulse skill and return its results.
+    
+    **Execution**:
+    1. Call: `skill({ name: "jira-pulse" })`
+    2. Wait for the skill to complete
+    3. Return the skill's output (the jira pulse report)
+    
+    The jira-pulse skill handles:
+    - Atlassian context discovery (cloudId, accountId)
+    - JQL searches for active and watched tickets
+    - Classification by urgency
+    - Output to `work/operations/daily-log/YYYY-MM-DD/jira-pulse.md`
+    
+    **Return**: The complete jira pulse report from the skill.
+
 # =============================================================================
 # EXECUTION FLOW
 # =============================================================================
@@ -92,6 +113,7 @@ parallel:
   email = session: email_scanner
   calendar = session: calendar_scanner
   slack = session: slack_scanner
+  jira = session: jira_scanner
 
 # Step 2: Return Results to SKILL.md
 # No synthesis here — SKILL.md handles synthesis with full session context

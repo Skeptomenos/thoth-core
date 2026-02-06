@@ -50,13 +50,15 @@ Main Session (Thoth)
 │   │   │   ├── work_email_scanner → mail-triage (work email)
 │   │   │   ├── work_calendar_scanner → cal-grid (work calendar)
 │   │   │   ├── work_slack_scanner → slack-pulse
+│   │   │   ├── work_jira_scanner → jira-pulse
 │   │   │   ├── life_email_scanner → mail-triage (personal email)
 │   │   │   └── life_calendar_scanner → cal-grid (personal calendar)
 │   │   │
 │   │   └── [SINGLE MODE] One hemisphere:
 │   │       ├── email_scanner → mail-triage
 │   │       ├── calendar_scanner → cal-grid
-│   │       └── slack_scanner → slack-pulse (work only)
+│   │       ├── slack_scanner → slack-pulse (work only)
+│   │       └── jira_scanner → jira-pulse (work only)
 │   │
 │   ├── Phase 3: Synthesize (YOU do this, with full context)
 │   │   └── Use daily-log-template.md
@@ -125,6 +127,7 @@ Spawn **5 parallel scanners**:
 | `work_email_scanner` | mail-triage | `WORK_EMAIL` | Work inbox |
 | `work_calendar_scanner` | cal-grid | `WORK_EMAIL` | Work calendar |
 | `work_slack_scanner` | slack-pulse | (workspace) | Slack activity |
+| `work_jira_scanner` | jira-pulse | (atlassian) | Jira tickets |
 | `life_email_scanner` | mail-triage | `LIFE_EMAIL` | Personal inbox |
 | `life_calendar_scanner` | cal-grid | `LIFE_EMAIL` | Personal calendar |
 
@@ -154,8 +157,9 @@ Spawn **3 parallel scanners** (or 2 for life):
 | `email_scanner` | mail-triage | Inbox scan |
 | `calendar_scanner` | cal-grid | Calendar analysis |
 | `slack_scanner` | slack-pulse | Slack activity (work only) |
+| `jira_scanner` | jira-pulse | Jira tickets (work only) |
 
-**Receive back:** `{ email, calendar, slack }` — summaries from scanners.
+**Receive back:** `{ email, calendar, slack, jira }` — summaries from scanners.
 
 ---
 
@@ -184,6 +188,7 @@ Check for spillover and commitments:
 | Calendar meetings | → Meeting load, complexity budget |
 | Calendar focus blocks | → Deep work windows |
 | Slack RESPOND items | → Pending responses (slack) |
+| Jira ACTIVE tickets | → Task priority, deadlines |
 | Meeting notes detected | → Handoff count for post-meeting-drill |
 | Spillover from yesterday | → Carry forward or reprioritize |
 | Dashboard priorities | → Cross-reference with today's items |
@@ -250,6 +255,7 @@ Write all files to `{OUTPUT_DIR}`:
 | `mail-triage.md` | Email scan results |
 | `cal-grid.md` | Calendar analysis |
 | `slack-pulse.md` | Slack activity (work only) |
+| `jira-pulse.md` | Jira tickets (work only) |
 
 ### Dual Mode Files
 
